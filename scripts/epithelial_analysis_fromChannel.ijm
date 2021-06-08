@@ -1,4 +1,12 @@
 
+// ===============================
+// AUTHOR : Gisele Miranda
+// IVESTIGATORS : Annelie Tjernlund, Mathias Franzén Boger, Gabriela Edfeldt kristina Broliden
+// CREATE DATE : 2020 - 06 - 18
+// PURPOSE : Structural analysis of the cervical epithelial tissue
+// NOTES : Required plugins - MorphoLibJ (https://imagej.net/MorphoLibJ)
+// ===============================
+
 /*************** parameters ******************************/
 
 type = "fromChannel";
