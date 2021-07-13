@@ -1,7 +1,7 @@
 
 // ===============================
 // AUTHOR : Gisele Miranda
-// IVESTIGATORS : Annelie Tjernlund, Mathias Franzén Boger, Gabriela Edfeldt kristina Broliden
+// IVESTIGATORS : Annelie Tjernlund, Mathias Franzén Boger, Gabriela Edfeldt, Kristina Broliden
 // CREATE DATE : 2020 - 06 - 18
 // PURPOSE : Structural analysis of the cervical epithelial tissue
 // NOTES : Required plugins - MorphoLibJ (https://imagej.net/MorphoLibJ)
@@ -9,9 +9,9 @@
 
 /*************** parameters ******************************/
 
-type = "fromNeuriteness";
-path = "/Users/gisele.miranda/Desktop/CIZ pics/sampleSNIs/";
-maxProjPath = "/Users/gisele.miranda/Desktop/CIZ pics/max_projection/";
+type = "fromNeuriteness"; // text to be appended on the output files
+path = ""; // images to be analyzed
+maxProjPath = ""; // path to the folder with the max projection files
 channel = "FITC";
 threshold_method = "Otsu";
 distance_threshold = 15;
