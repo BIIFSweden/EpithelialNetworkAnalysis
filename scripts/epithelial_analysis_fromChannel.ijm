@@ -1,7 +1,7 @@
 
 // ===============================
 // AUTHOR : Gisele Miranda
-// IVESTIGATORS : Annelie Tjernlund, Mathias Franzén Boger, Gabriela Edfeldt kristina Broliden
+// IVESTIGATORS : Annelie Tjernlund, Mathias Franzén Boger, Gabriela Edfeldt, Kristina Broliden
 // CREATE DATE : 2020 - 06 - 18
 // PURPOSE : Structural analysis of the cervical epithelial tissue
 // NOTES : Required plugins - MorphoLibJ (https://imagej.net/MorphoLibJ)
@@ -12,7 +12,7 @@
 type = "fromChannel";
 path = "/Users/gisele.miranda/Desktop/CIZ pics/sampleSNIs/";
 maxProjPath = "/Users/gisele.miranda/Desktop/CIZ pics/max_projection/";
-channel = "FITC";
+channel = "Cy5";
 threshold_method = "Otsu";
 distance_threshold = 15;
 correc_factor = 1.6;
@@ -192,7 +192,7 @@ getDateAndTime(year, month, dayOfWeek, dayOfMonth, hour, minute, second, msec);
 overlayPath = path + "overlay_" + threshold_method + "_correc-factor-" + correc_factor + "_dist-" + distance_threshold + "_area-" + area_threshold + "_radDilation-" + radiusDilation + "_type-" + type + "_channel-" + channel + "_" + year + "-" + month + "-" + dayOfMonth + "/";
 if(!File.exists(overlayPath)) File.makeDirectory(overlayPath);
 
-for(cont=0; cont<1; cont++) { //dir.length; cont++) { 
+for(cont=0; cont<dir.length; cont++) { 
 	file = dir[cont];
 	images = getFileList(path+file+"newTiffImages");
 	dapiImg = false;
