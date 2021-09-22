@@ -10,9 +10,9 @@
 /*************** parameters ******************************/
 
 type = "fromNeuriteness"; // text to be appended on the output files
-path = ""; // images to be analyzed
-maxProjPath = ""; // path to the folder with the max projection files
-channel = "FITC";
+path = "/Users/gisele.miranda/Desktop/Annelie/test2neuriteness_12_07_2021/images/"; // images to be analyzed
+maxProjPath = "/Users/gisele.miranda/Desktop/Annelie/test2neuriteness_12_07_2021/projection/"; // path to the folder with the max projection files
+channel = "cy3";
 threshold_method = "Otsu";
 distance_threshold = 15;
 correc_factor = 1.6;
@@ -297,7 +297,7 @@ for(cont=0; cont<dir.length; cont++) {
 							run("Analyze Particles...", "clear summarize");
 							Table.rename("Summary", "Results");
 							tot_area_epithelium = getResult("Total Area", 0);
-							//print("total area epithelium: " + tot_area_epithelium);
+							print("total area epithelium: " + tot_area_epithelium);
 							selectWindow("Results"); 
 							run("Close");
 			
