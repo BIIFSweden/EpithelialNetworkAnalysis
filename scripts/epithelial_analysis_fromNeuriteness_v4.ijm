@@ -10,17 +10,18 @@
 
 /*************** parameters ******************************/
 
-path = "/Users/gisele.miranda/Desktop/Annelie/Mathias/OneDrive_1_24-11-2021/Original folders/SNI/"; // images to be analyzed
-maxProjPath = "/Users/gisele.miranda/Desktop/Annelie/Mathias/OneDrive_1_24-11-2021/Original folders/Max/"; // path to the folder with the max projection files
-neur_channels = newArray("cy3"); // select channels to be combined for neuriteness
+path = "/Users/giselemiranda/Desktop/Backup/Annelie/Mathias/test2/SNI/"; // images to be analyzed
+maxProjPath = "/Users/giselemiranda/Desktop/Backup/Annelie/Mathias/test2/max/"; // path to the folder with the max projection files
+neur_channels = newArray("cy3", "FITC"); // select channels to be combined for neuriteness
 threshold_method = "Otsu";
 distance_threshold = 10;
 correc_factor = 1.5;
 area_threshold = 50000;
+area_connected_threshold = 5000;
 radiusDilation = 5;
 nucleiSize = 1000;
 pixPerMic = 3.07693;
-useScale = true; // or 'false'
+useScale = true;
 combine_neur = false;
 minThr = 0;
 maxThr = 1;
@@ -29,7 +30,7 @@ maxThr = 1;
 
 dir = getFileList(path);
 bufferMeasuresFITC = "";
-bufferMeasuresCy3 = "";
+bufferMeasurescy3 = "";
 bufferMeasuresCy5 = "";
 bufferMeasuresMcherry = "";
 getDateAndTime(year, month, dayOfWeek, dayOfMonth, hour, minute, second, msec);
@@ -247,12 +248,6 @@ for(cont=0; cont<dir.length; cont++) { // for each SNI
 								rename("neuriteness");
 								run("Restore Selection");
 		
-								run("Measure");
-								neur_mean = getResult("Mean", 0);
-								neur_std = getResult("StdDev", 0);
-								selectWindow("Results"); 
-								run("Close");
-		
 								selectWindow("neuriteness");
 								run("Flatten");
 								saveAs("Tif", outpath + "segmented_neuriteness_original_" + channel + ".tif");
@@ -261,7 +256,6 @@ for(cont=0; cont<dir.length; cont++) { // for each SNI
 								run("Close All");
 
 								// get parabasal, upper and lower layers
-
 								run("Bio-Formats Importer", "open=[" + outpath + "mask_epithelium.tif] color_mode=Default rois_import=[ROI manager] view=Hyperstack stack_order=XYCZT");
 								rename("mask_epithelium");
 								if(combine_neur) run("Bio-Formats Importer", "open=[" + outpath + "marker_of_interest.tif] color_mode=Default rois_import=[ROI manager] view=Hyperstack stack_order=XYCZT");
@@ -371,26 +365,34 @@ for(cont=0; cont<dir.length; cont++) { // for each SNI
 								run("Remove Overlay");
 								run("Close All");
 
-								// run watershed and get intact net
-								area_inteact_net = 0;
-								if(combine_neur) area_inteact_net = getIntactNet("", outpath, overlayPath, image);
-								else area_inteact_net = getIntactNet(channel, outpath, overlayPath, image);
-
-								// get intact net via biggest connected component
-								area_inteact_net_cc = 0;
-								if(combine_neur) area_inteact_net_cc = getIntactNet_ConnectedComponent("", outpath, overlayPath, image);
-								else area_inteact_net_cc = getIntactNet_ConnectedComponent(channel, outpath, overlayPath, image);
-
-								print("area intact net: " + area_inteact_net);
-								print("area intact net_cc: " + area_inteact_net_cc);
-
-								// update buffers
+								// get total area of the epithelium
 								tot_area_epithelium = getEpitheliumArea(sni, outpath);
-								bufferMeasures = image + ";" + epithHeight + ";" + tot_area_epithelium + ";" + tot_area_segmented_net + ";" + orig_mean + ";" + orig_std + ";" + area_segmented_net + ";" + neur_mean + ";" + neur_std + ";" + (tot_area_segmented_net/tot_area_epithelium) + ";" + (area_segmented_net/tot_area_epithelium) + ";" + (area_segmented_net/tot_area_segmented_net) + ";" + bufferChannel + ";" + area_inteact_net + ";" + (area_inteact_net/area_segmented_net) + "\n";
+								
+								tot_area_neuriteness = 0;
+								intact_net_measures = 0;
+								flooded_area = 0;
+								if(combine_neur) {
+									tot_area_neuriteness = getNeuritenessArea("", outpath);
+									intact_net_measures = getIntactNet_ConnectedComponent(path, sni, "", outpath, overlayPath, image); // get intact net via connected components
+									flooded_area = getFloodedArea("", outpath, overlayPath, maxProjPath, sni, image); // get area flooded by watershed
+								}
+								else {
+									tot_area_neuriteness = getNeuritenessArea(channel, outpath);
+									intact_net_measures = getIntactNet_ConnectedComponent(path, sni, channel, outpath, overlayPath, image);
+									flooded_area = getFloodedArea(channel, outpath, overlayPath, maxProjPath, sni, image);
+								}
+								
+								intact_net_measures = split(intact_net_measures," ");
+								area_intact_net_cc = parseFloat(intact_net_measures[0]);
+								MFI_intact_net_cc = parseFloat(intact_net_measures[1]);
+								std_MFI_intact_net_cc = parseFloat(intact_net_measures[2]);
+								
+								// update buffers
+								bufferMeasures = image + ";" + epithHeight + ";" + tot_area_epithelium + ";" + tot_area_segmented_net + ";" + orig_mean + ";" + orig_std + ";" + area_segmented_net + ";" + (tot_area_segmented_net/tot_area_epithelium) + ";" + (area_segmented_net/tot_area_epithelium) + ";" + (area_segmented_net/tot_area_segmented_net) + ";" + bufferChannel + ";" + area_intact_net_cc + ";" + tot_area_neuriteness + ";" + (area_intact_net_cc/tot_area_neuriteness) + ";" + MFI_intact_net_cc + ";" + std_MFI_intact_net_cc + ";" + flooded_area + ";" + (flooded_area/tot_area_epithelium) + "\n";
 								if(matches(image, ".*FITC.*"))
 									bufferMeasuresFITC = bufferMeasuresFITC + bufferMeasures;
 								else if(matches(image, ".*cy3.*"))
-									bufferMeasuresCy3 = bufferMeasuresCy3 + bufferMeasures;
+									bufferMeasurescy3 = bufferMeasurescy3 + bufferMeasures;
 								else if(matches(image, ".*Cy5.*"))
 									bufferMeasuresCy5 = bufferMeasuresCy5 + bufferMeasures;
 								else if(matches(image, ".*m cherry.*"))
@@ -417,18 +419,94 @@ for(cont=0; cont<dir.length; cont++) { // for each SNI
 for(countChannels=0; countChannels<neur_channels.length; countChannels++) {
 	ch = neur_channels[countChannels];
 
-	summaryPath = path + "summary" + ch + "_" + exp_id + ".csv";
+	summaryPath = path + "summary_" + ch + "_" + exp_id + ".csv";
 
 	if(File.exists(summaryPath))
 		File.delete(summaryPath);
 
 	summaryFile = File.open(summaryPath);
-	print(summaryFile, "image;number of pixels in the basal layer;average height basal layer;std basal layer;min basal layer;max basal layer;number of pixels in the apical layer;height apical layer;std apical layer;min apical layer;max apical layer;area - epithelium; area - marker of interest;MFI - marker of interest;stdMFI - marker of interest;area - neuriteness;MFI - neuriteness;stdMFI - neuriteness;relative area - marker of interest per total epithelium;realtive area - neuriteness per total epithelium;realtive area - neuriteness per marker of interest;area - marker of interest + parabasal layer;area - upper layer;area - lower layer;average height between marker of interest and apical layer;std height between marker of interest and apical layer;min height between marker of interest and apical layer;max height between marker of interest and apical layer;average height between marker of interest and basal layer;std height between marker of interest and basal layer;min height between marker of interest and basal layer;max height between marker of interest and basal layer;area - intact net;relative area - intact net per neuriteness total area\n");
-	print(summaryFile, bufferMeasures);
+	print(summaryFile, "image;number of pixels in the basal layer;average height basal layer;std basal layer;min basal layer;max basal layer;number of pixels in the apical layer;height apical layer;std apical layer;min apical layer;max apical layer;area - epithelium; area - marker of interest;MFI - marker of interest;stdMFI - marker of interest;area - neuriteness;relative area - marker of interest per total epithelium;realtive area - neuriteness per total epithelium;realtive area - neuriteness per marker of interest;area - marker of interest + parabasal layer;area - upper layer;area - lower layer;average height between marker of interest and apical layer;std height between marker of interest and apical layer;min height between marker of interest and apical layer;max height between marker of interest and apical layer;average height between marker of interest and basal layer;std height between marker of interest and basal layer;min height between marker of interest and basal layer;max height between marker of interest and basal layer;area - intact net;neuriteness total area;relative area - intact net per neuriteness total area;MFI intact net (original);stdMFI intact net (original);flooded area;relative area - flooded area per total epithelium\n");
+	//print(summaryFile, bufferMeasures);
+	if(matches(ch, ".*FITC.*"))
+		print(summaryFile, bufferMeasuresFITC);
+	else if(matches(ch, ".*cy3.*"))
+		print(summaryFile, bufferMeasurescy3);
+	else if(matches(ch, ".*Cy5.*"))
+		print(summaryFile, bufferMeasuresCy5);
+	else if(matches(ch, ".*m cherry.*"))
+		print(summaryFile, bufferMeasuresMcherry);
 	File.close(summaryFile);
 }
 
 /****************** functions ****************************/
+
+function getFloodedArea(channel, out_path, overlay_path, maxProj_path, sni, img) {
+	open(out_path + "mask_epithelium.tif");
+	
+	wid = getWidth();
+	hei = getHeight();
+	newImage("temp", "8-bit black", wid, hei, 1);
+	
+	roiManager("Open", maxProjPath + sni + "_AB.zip");
+	roiManager("Show All");
+	
+	roiManager("Select", 0);
+	run("Create Mask");
+	rename("apical");
+	
+	selectWindow("temp");
+	roiManager("Select", 1);
+	run("Create Mask");
+	rename("basal");
+	
+	selectWindow("temp");
+	close();
+	selectWindow("ROI Manager"); 
+	run("Close");
+
+	// get neuriteness
+	if(matches(channel, ""))
+		open(out_path + "thresholded_neuriteness_combined.tif");
+	else
+		open(out_path + "thresholded_neuriteness_" + channel + ".tif");
+	rename("neuriteness");
+		
+	selectWindow("mask_epithelium.tif");
+	run("Set Measurements...", "area mean standard min redirect=None decimal=4");
+	run("Analyze Particles...", "  show=[Bare Outlines] clear add");
+	rename("epithelium_outline");
+	run("Options...", "iterations=1 count=1 black do=Nothing");
+	run("Convert to Mask");
+	selectWindow("ROI Manager"); 
+	run("Close");
+	
+	// create marker for whatershed
+	selectWindow("apical");
+	run("Morphological Filters", "operation=Dilation element=Square radius=20");
+	rename("marker");
+	imageCalculator("AND create", "mask_epithelium.tif","marker");
+	rename("marker_processed");
+	run("Erode");
+	
+	imageCalculator("Add create", "epithelium_outline","neuriteness");
+	rename("mask_watershed");
+	run("Invert");
+	run("Morphological Reconstruction", "marker=marker_processed mask=mask_watershed type=[By Dilation] connectivity=4");
+	
+	saveAs("Tif", overlay_path + "flooded_region_" + channel + "_" + img);
+	rename("marker_processed-rec");
+	
+	if(useScale) run("Set Scale...", "distance=" + pixPerMic + " known=1 unit=micron");
+	run("Set Measurements...", "area mean standard min redirect=None decimal=4");
+	run("Analyze Particles...", "clear summarize");
+	Table.rename("Summary", "Results");
+	area_flooded = getResult("Total Area", 0);
+	selectWindow("Results"); 
+	run("Close");
+	
+	run("Close All");
+	return(area_flooded);
+}
 
 function getIntactNet(channel, out_path, overlay_path, img) {
 
@@ -470,49 +548,59 @@ function getIntactNet(channel, out_path, overlay_path, img) {
 	run("Restore Selection");
 	run("Properties... ", "  width=3");
 	run("Flatten");
-	saveAs("Tif", out_path + "intact_net_watershed" + channel + ".tif");
-	saveAs("Tif", overlay_path + "intact_net_watershed" + channel + "_" + img);
+	saveAs("Tif", out_path + "intact_net_watershed_" + channel + ".tif");
+	saveAs("Tif", overlay_path + "intact_net_watershed_" + channel + "_" + img);
 
 	run("Close All");
-
 	return(tot_area);
 }
 
-function getIntactNet_ConnectedComponent(channel, out_path, overlay_path, img) {
-
+function getIntactNet_ConnectedComponent(path, sni, channel, out_path, overlay_path, img) {
+	
+	// open original channel image
+	img_file = replace(image, "Ne_", "");
+	run("Bio-Formats Importer", "open=[" + path + sni + "/newTiffImages/" + img_file + "] color_mode=Default view=Hyperstack stack_order=XYCZT");
+	if(!useScale) run("Set Scale...", "distance=1 known=1 unit=micron");
+	
 	// open neuriteness image
 	if(matches(channel, ""))
 		open(out_path + "thresholded_neuriteness_combined.tif");
 	else
 		open(out_path + "thresholded_neuriteness_" + channel + ".tif");
 		
-	run("Median...", "radius=4");
 	rename("inputImg");
 	run("Duplicate...", "markerImg");
 	rename("markerImg");
-
-	if(useScale) run("Set Scale...", "distance=" + pixPerMic + " known=1 unit=micron");
-	run("Set Measurements...", "area mean standard min redirect=None decimal=4");
-	run("Analyze Particles...", "  show=[Count Masks] display clear add");
+	
+	run("Set Measurements...", "area mean standard min redirect=["+img_file+"] decimal=4");
+	run("Analyze Particles...", "size="+area_connected_threshold+"-Infinity show=[Count Masks] clear");
 	selectWindow("Count Masks of markerImg");
 	run("glasbey");
-
-	saveAs("PNG", out_path + "intact_net_connected" + channel + ".png");
-	saveAs("PNG", overlay_path + "intact_net_connected" + channel + "_" + img);
-
-	big_ind = findBiggestROI();
-	big_area = getResult("Area", big_ind);
-	roiManager("select", big_ind);
-	run("Create Mask");
-	rename("intact_net");
+	saveAs("PNG", out_path + "intact_net_connected_" + channel + ".png");
+	saveAs("PNG", overlay_path + "intact_net_connected_" + channel + "_" + img);
+	
+	selectWindow("inputImg");
+	run("Analyze Particles...", "size="+area_connected_threshold+"-Infinity show=Masks clear");
+	run("Options...", "iterations=1 count=1 black do=Nothing");
+	run("Convert to Mask");
+	run("Create Selection");
+	selectWindow(img_file);
+	run("Restore Selection");
+	run("Measure");
+	
+	tot_area = getResult("Area", 0);
+	mfi = getResult("Mean", 0);
+	stdMfi = getResult("StdDev", 0);
 	
 	selectWindow("Results"); 
 	run("Close");
-	selectWindow("ROI Manager"); 
-	run("Close");
 	run("Close All");
-
-	return(big_area);
+	
+	m = d2s(tot_area,4) + " " + d2s(mfi,4) + " " + d2s(stdMfi,4);
+	
+	print("channel: " + channel + " area: " + tot_area);
+ 
+	return m;
 }
 
 function getEpithelium(sni, out_path) {
@@ -594,6 +682,27 @@ function getEpitheliumArea(sni, out_path) {
 	selectWindow("Results"); 
 	run("Close");
 
+	return(tot_area);
+}
+
+function getNeuritenessArea(channel, out_path) {
+	// open neuriteness image
+	if(matches(channel, ""))
+		open(out_path + "thresholded_neuriteness_combined.tif");
+	else
+		open(out_path + "thresholded_neuriteness_" + channel + ".tif");
+	
+	if(useScale) run("Set Scale...", "distance=" + pixPerMic + " known=1 unit=micron");
+	run("Set Measurements...", "area mean standard min redirect=None decimal=4");
+	run("Analyze Particles...", "clear summarize");
+	Table.rename("Summary", "Results");
+	tot_area = getResult("Total Area", 0);
+
+	selectWindow("Results"); 
+	run("Close");
+	
+	run("Close All");
+	
 	return(tot_area);
 }
 
