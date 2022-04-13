@@ -560,6 +560,7 @@ function getIntactNet_ConnectedComponent(path, sni, channel, out_path, overlay_p
 	// open original channel image
 	img_file = replace(image, "Ne_", "");
 	run("Bio-Formats Importer", "open=[" + path + sni + "/newTiffImages/" + img_file + "] color_mode=Default view=Hyperstack stack_order=XYCZT");
+	rename("original");
 	if(!useScale) run("Set Scale...", "distance=1 known=1 unit=micron");
 	
 	// open neuriteness image
@@ -572,7 +573,7 @@ function getIntactNet_ConnectedComponent(path, sni, channel, out_path, overlay_p
 	run("Duplicate...", "markerImg");
 	rename("markerImg");
 	
-	run("Set Measurements...", "area mean standard min redirect=["+img_file+"] decimal=4");
+	run("Set Measurements...", "area mean standard min redirect=original decimal=4");
 	run("Analyze Particles...", "size="+area_connected_threshold+"-Infinity show=[Count Masks] clear");
 	selectWindow("Count Masks of markerImg");
 	run("glasbey");
@@ -584,7 +585,7 @@ function getIntactNet_ConnectedComponent(path, sni, channel, out_path, overlay_p
 	run("Options...", "iterations=1 count=1 black do=Nothing");
 	run("Convert to Mask");
 	run("Create Selection");
-	selectWindow(img_file);
+	selectWindow("original");
 	run("Restore Selection");
 	run("Measure");
 	
