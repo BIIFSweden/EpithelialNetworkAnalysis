@@ -46,8 +46,32 @@ Note that the scripts *batch_neuriteness.m* and *maximum_intensity_projection.ij
 
 The figure below shows the updated version of input directory, which is now ready to be processed in the next step.
 
-<a href="url"><img src="img/input_directory_projections.png" height="auto" width="600" ></a>
+<a href="url"><img src="img/input_directory_projections.png" height="auto" width="700" ></a>
 
 
 ### 5.	Quantitative analysis of the cervical epithelium
+
+The workflow implemented in the *epithelial_analysis.ijm* script can be summarized in the following steps:
+
+a. Segmentation of the epithelium;
+b. Calculation of the epithelium height based on Euclidean distance transform (EDT);
+c. Segmentation of the neuriteness network for each fluorescent marker;
+d. Quantification the segmented neuriteness;
+e. Calculation of the distance between the segmented fluorescent marker to the apical and basal layers;
+f. Segmentation and quantification of the intact net;
+
+#### a.	Segmentation of the epithelium
+
+The segmentation of the epithelium is performed using the manual annotations of the basal and apical layers. These two layers are connected in order to obtain a polygon, which corresponds to the binary mask of the epithelium as illustrated below.
+
+<a href="url"><img src="img/epithelium_segmentation.png" height="auto" width="500" ></a>
+
+#### b.	Obtaining the epithelium height based on EDT
+
+The calculation of the epithelium height is performed using the Euclidean distance transform from the basal layer towards the apical layer, and, from the apical layer towards the basal layer, as shown in the image below, repectively. The distance values in in the yellow and red lines will be averaged, generating then the final value for the epithelium height.
+
+<a href="url"><img src="img/edt_apical_basal.png" height="auto" width="500" ></a>
+
+
+
 
