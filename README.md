@@ -1,4 +1,4 @@
-# Structural Analysis of the cervical Epithelial Tissue
+# Structural Analysis of the Cervical Epithelial Tissue
 
 
 ### 1.	Input directory and naming convetion
@@ -18,7 +18,9 @@ To run the script that generates the *neuriteness* image, [Matlab](https://se.ma
 
 ### 3.	Neuriteness script
 
-The Matlab script *batch_neuriteness.m* generates the *neuriteness* images for each fluorescent channel of each SNI using the method proposed by: Obara, Boguslaw, et al. "Contrast-independent curvilinear structure detection in biomedical images." *IEEE Transactions on Image Processing* 21.5 (2012): 2572-2581.
+The Matlab script *batch_neuriteness.m* generates the *neuriteness* images for each fluorescent channel of each SNI using the method proposed by: Obara, Boguslaw, et al. "Contrast-independent curvilinear structure detection in biomedical images." *IEEE Transactions on Image Processing* 21.5 (2012): 2572-2581. The figure below shows an example of a *neuriteness* network, obtained from a sample image.
+
+<a href="url"><img src="img/neuriteness.png" height="auto" width="500" ></a>
 
 To run *batch_neuriteness.m*, load the script in Matlab and then update the corresponding local path in the *addpath* command, which should be linked to the [*vesselness2d* library](https://github.com/BoguslawObara/vesselness2d).
 
@@ -34,9 +36,18 @@ To run the script, open Fiji and go to Plugins – Macros – Edit... and browse
 
 <a href="url"><img src="img/max_intens_proj.png" height="auto" width="600" ></a>
 
-After the execution of this script, a folder will be created containing the projected images of each SNI in tif format. An updated version of the input directory is shown below.
+After the execution of this script, a folder will be created containing the projected images of each SNI in *tif* format, as shown below.
 
-<a href="url"><img src="img/max_proj_folder.png" height="auto" width="600" ></a>
+<a href="url"><img src="img/max_proj_folder.png" height="auto" width="400" ></a>
+
+The *zip* files correspond to the manual annotations of the basal and apical layers of the epithelial tissue. They can be opened in Fiji using the Roi Manager tool. The *maximum_intensity_projection.ijm* script also generates a new folder inside each SNI folder named newTiffImages, saving the input channels in a non-tile *tiff* format. 
+
+Note that the scripts *batch_neuriteness.m* and *maximum_intensity_projection.ijm* can be run in any order. 
+
+The figure below shows the updated version of input directory, which is now ready to be processed in the next step.
+
+<a href="url"><img src="img/input_directory_projections.png" height="auto" width="600" ></a>
 
 
+### 5.	Quantitative analysis of the cervical epithelium
 
