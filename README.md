@@ -20,7 +20,7 @@ To run the script that generates the *neuriteness* image, [Matlab](https://se.ma
 
 The Matlab script *batch_neuriteness.m* generates the *neuriteness* images for each fluorescent channel of each SNI using the method proposed by: Obara, Boguslaw, et al. "Contrast-independent curvilinear structure detection in biomedical images." *IEEE Transactions on Image Processing* 21.5 (2012): 2572-2581. The figure below shows an example of a *neuriteness* network, obtained from a sample image.
 
-<a href="url"><img src="img/neuriteness.png" height="auto" width="500" ></a>
+<a href="url"><img src="img/neuriteness.png" height="auto" width="700" ></a>
 
 To run *batch_neuriteness.m*, load the script in Matlab and then update the corresponding local path in the *addpath* command, which should be linked to the [*vesselness2d* library](https://github.com/BoguslawObara/vesselness2d).
 
@@ -53,24 +53,26 @@ The figure below shows the updated version of input directory, which is now read
 
 The workflow implemented in the *epithelial_analysis.ijm* script can be summarized in the following steps:
 
-a. Segmentation of the epithelium;
-b. Calculation of the epithelium height based on Euclidean distance transform (EDT);
-c. Segmentation of the neuriteness network for each fluorescent marker;
-d. Quantification the segmented neuriteness;
-e. Calculation of the distance between the segmented fluorescent marker to the apical and basal layers;
-f. Segmentation and quantification of the intact net;
+* Segmentation of the epithelium;
+* Calculation of the epithelium height based on Euclidean distance transform (EDT);
+* Segmentation of the neuriteness network for each fluorescent marker;
+* Quantification the segmented neuriteness;
+* Calculation of the distance between the segmented fluorescent marker to the apical and basal layers;
+* Segmentation and quantification of the intact net;
 
 #### a.	Segmentation of the epithelium
 
 The segmentation of the epithelium is performed using the manual annotations of the basal and apical layers. These two layers are connected in order to obtain a polygon, which corresponds to the binary mask of the epithelium as illustrated below.
 
-<a href="url"><img src="img/epithelium_segmentation.png" height="auto" width="500" ></a>
+<a href="url"><img src="img/epithelium_segmentation.png" height="auto" width="700" ></a>
 
 #### b.	Obtaining the epithelium height based on EDT
 
 The calculation of the epithelium height is performed using the Euclidean distance transform from the basal layer towards the apical layer, and, from the apical layer towards the basal layer, as shown in the image below, repectively. The distance values in in the yellow and red lines will be averaged, generating then the final value for the epithelium height.
 
-<a href="url"><img src="img/edt_apical_basal.png" height="auto" width="500" ></a>
+<a href="url"><img src="img/edt_apical_basal.png" height="auto" width="700" ></a>
+
+#### c. Segmentation of the neuriteness image
 
 
 
