@@ -10,9 +10,9 @@
 
 /*************** parameters ******************************/
 
-path = "/Users/giselemiranda/Desktop/Backup/Annelie/Mathias/test2/SNI/"; // images to be analyzed
-maxProjPath = "/Users/giselemiranda/Desktop/Backup/Annelie/Mathias/test2/max/"; // path to the folder with the max projection files
-neur_channels = newArray("cy3", "FITC"); // select channels to be combined for neuriteness
+path = "Z:/gismir/Annelie/test_08_07_22/SNI/"; // images to be analyzed
+maxProjPath = "Z:/gismir/Annelie/test_08_07_22/Max/"; // path to the folder with the max projection files
+neur_channels = newArray("Cy5"); // select channels to be combined for neuriteness
 threshold_method = "Otsu";
 distance_threshold = 10;
 correc_factor = 1.5;
@@ -25,6 +25,7 @@ useScale = true;
 combine_neur = false;
 minThr = 0;
 maxThr = 1;
+exp_name = "TestCy5";
 
 /*********************************************************/
 
@@ -33,8 +34,7 @@ bufferMeasuresFITC = "";
 bufferMeasurescy3 = "";
 bufferMeasuresCy5 = "";
 bufferMeasuresMcherry = "";
-getDateAndTime(year, month, dayOfWeek, dayOfMonth, hour, minute, second, msec);
-exp_id = threshold_method + "_correc-factor-" + correc_factor + "_dist-" + distance_threshold + "_area-" + area_threshold + "_radDilation-" + radiusDilation + "_" + year + "-" + (month+1) + "-" + dayOfMonth + "_" + hour + "-" + minute;
+exp_id = threshold_method + "_correc-factor-" + correc_factor + "_dist-" + distance_threshold + "_area-" + area_threshold + "_radDilation-" + radiusDilation + "_" + exp_name;
 if(combine_neur) exp_id = exp_id + "_combined";
 overlayPath = path + "overlay_" + exp_id + "/";
 if(!File.exists(overlayPath)) File.makeDirectory(overlayPath);
@@ -64,6 +64,7 @@ for(cont=0; cont<dir.length; cont++) { // for each SNI
 			
 			// get average epithelium height
 			epithHeight = getEpitheliumHeight(sni, outpath);
+			print(epithHeight);
 	
 			// get combined Neuriteness, otherwise get individual neuriteness below
 			if(combine_neur) getCombinedNeuriteness(sni, outpath);
@@ -386,6 +387,12 @@ for(cont=0; cont<dir.length; cont++) { // for each SNI
 								area_intact_net_cc = parseFloat(intact_net_measures[0]);
 								MFI_intact_net_cc = parseFloat(intact_net_measures[1]);
 								std_MFI_intact_net_cc = parseFloat(intact_net_measures[2]);
+
+								//area_intact_net_cc/tot_area_neuriteness
+								/*print("area_intact_net_cc: " + area_intact_net_cc);
+								print("tot_area_neuriteness: " + tot_area_neuriteness);
+								print("MFI_intact_net_cc: " + MFI_intact_net_cc);
+								print("std_MFI_intact_net_cc: " + std_MFI_intact_net_cc);*/
 								
 								// update buffers
 								bufferMeasures = image + ";" + epithHeight + ";" + tot_area_epithelium + ";" + tot_area_segmented_net + ";" + orig_mean + ";" + orig_std + ";" + area_segmented_net + ";" + (tot_area_segmented_net/tot_area_epithelium) + ";" + (area_segmented_net/tot_area_epithelium) + ";" + (area_segmented_net/tot_area_segmented_net) + ";" + bufferChannel + ";" + area_intact_net_cc + ";" + tot_area_neuriteness + ";" + (area_intact_net_cc/tot_area_neuriteness) + ";" + MFI_intact_net_cc + ";" + std_MFI_intact_net_cc + ";" + flooded_area + ";" + (flooded_area/tot_area_epithelium) + "\n";
@@ -574,33 +581,41 @@ function getIntactNet_ConnectedComponent(path, sni, channel, out_path, overlay_p
 	rename("markerImg");
 	
 	run("Set Measurements...", "area mean standard min redirect=original decimal=4");
-	run("Analyze Particles...", "size="+area_connected_threshold+"-Infinity show=[Count Masks] clear");
+	run("Analyze Particles...", "size="+area_connected_threshold+"-Infinity show=[Count Masks] clear add");
 	selectWindow("Count Masks of markerImg");
 	run("glasbey");
 	saveAs("PNG", out_path + "intact_net_connected_" + channel + ".png");
 	saveAs("PNG", overlay_path + "intact_net_connected_" + channel + "_" + img);
-	
-	selectWindow("inputImg");
-	run("Analyze Particles...", "size="+area_connected_threshold+"-Infinity show=Masks clear");
-	run("Options...", "iterations=1 count=1 black do=Nothing");
-	run("Convert to Mask");
-	run("Create Selection");
-	selectWindow("original");
-	run("Restore Selection");
-	run("Measure");
-	
-	tot_area = getResult("Area", 0);
-	mfi = getResult("Mean", 0);
-	stdMfi = getResult("StdDev", 0);
-	
-	selectWindow("Results"); 
+
+	nIntNet = roiManager("count");
+
+	selectWindow("ROI Manager"); 
 	run("Close");
+
+	if(nIntNet > 0) {
+		selectWindow("inputImg");
+		run("Analyze Particles...", "size="+area_connected_threshold+"-Infinity show=Masks clear");
+		run("Options...", "iterations=1 count=1 black do=Nothing");
+		run("Convert to Mask");
+		run("Create Selection");
+		selectWindow("original");
+		run("Restore Selection");
+		run("Measure");
+		
+		tot_area = getResult("Area", 0);
+		mfi = getResult("Mean", 0);
+		stdMfi = getResult("StdDev", 0);
+		
+		selectWindow("Results"); 
+		run("Close");
+		
+		m = d2s(tot_area,4) + " " + d2s(mfi,4) + " " + d2s(stdMfi,4);
+	}
+	else {
+		m = "0 0 0";
+	}
 	run("Close All");
 	
-	m = d2s(tot_area,4) + " " + d2s(mfi,4) + " " + d2s(stdMfi,4);
-	
-	print("channel: " + channel + " area: " + tot_area);
- 
 	return m;
 }
 
@@ -612,7 +627,7 @@ function getEpithelium(sni, out_path) {
 
 	// rough threshold just to separate the background
 	if(bitDepth() == 8)
-		setThreshold(5, 256);
+		setThreshold(0, 256);
 	else 
 		setThreshold(5, 65535);
 	
