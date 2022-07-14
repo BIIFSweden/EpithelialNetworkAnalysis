@@ -10,13 +10,13 @@
 
 /*************** parameters ******************************/
 
-path = "Z:/gismir/Annelie/test_08_07_22/SNI/"; // images to be analyzed
+path = "Z:/gismir/Annelie/test_08_07_22/SNI/"; // OneDrive_1_24-11-2021/Original folders/SNI/"; // images to be analyzed
 maxProjPath = "Z:/gismir/Annelie/test_08_07_22/Max/"; // path to the folder with the max projection files
-neur_channels = newArray("Cy5"); // select channels to be combined for neuriteness
+neur_channels = newArray("FITC"); // select channels to be combined for neuriteness
 threshold_method = "Otsu";
 distance_threshold = 10;
 correc_factor = 1.5;
-area_threshold = 50000;
+area_threshold = 70000;
 area_connected_threshold = 5000;
 radiusDilation = 5;
 nucleiSize = 1000;
@@ -25,7 +25,7 @@ useScale = true;
 combine_neur = false;
 minThr = 0;
 maxThr = 1;
-exp_name = "TestCy5";
+exp_name = "TestFITC3";
 
 /*********************************************************/
 
@@ -43,7 +43,8 @@ for(cont=0; cont<dir.length; cont++) { // for each SNI
 	sni = dir[cont];
 	images = getFileList(path+sni);
 
-	if(startsWith(sni, "SNI") || startsWith(sni, "Neg SNI")) { // check if input file is a SNI
+	// check if input folder is a SNI. It should start with "SNI" or "Neg SNI" (for negative control)
+	if(startsWith(sni, "SNI") || startsWith(sni, "Neg SNI")) {
 		outpath = path + sni + "output_" + exp_id + "/";
 		if(!File.exists(outpath)) File.makeDirectory(outpath);
 		
@@ -51,13 +52,13 @@ for(cont=0; cont<dir.length; cont++) { // for each SNI
 		print(sni);
 		sni = replace(sni, "/", "");
 
-		// check if files exist
+		// check if original image and AB lines exist
 		print(path + sni + "/newTiffImages/" + sni + "_FITC_Extended.tif");
 		fitcChannel = File.exists(path + sni + "/newTiffImages/" + sni + "_FITC_Extended.tif");
 		print(maxProjPath + sni + "_AB.zip");
-		projOutlines = File.exists(maxProjPath + sni + "_AB.zip");
+		ABlines = File.exists(maxProjPath + sni + "_AB.zip");
 
-		if(fitcChannel && projOutlines) { // check if FITC channel and the corresponding max projection exists for the segmentation of the epithelium
+		if(fitcChannel && ABlines) { // check if FITC channel and the corresponding max projection exists for the segmentation of the epithelium
 
 			// get epithelium
 			getEpithelium(sni, outpath);
@@ -77,7 +78,7 @@ for(cont=0; cont<dir.length; cont++) { // for each SNI
 				image = images[cont2];
 				neurit_file = false;
 				
-				if(containsSNI(image) && startsWith(image, "Ne_")) {
+				if(channelOfInterest(image) && startsWith(image, "Ne_")) {
 					aux = split(image, "_");
 					print("image: " + image);
 					channel = aux[(aux.length-2)];
@@ -166,11 +167,22 @@ for(cont=0; cont<dir.length; cont++) { // for each SNI
 								run("Analyze Particles...", "clear summarize");
 								Table.rename("Summary", "Results");
 								tot_area = getResult("Total Area", 0);
-								//if(tot_area != 0 && area_i < area_threshold) {
-								if(area_i < area_threshold) {
-									indexToDelete[i] = 1;
+								print("tot_area: " + tot_area);
+								print("area_i: " + area_i);
+
+								if(matches(channel, "Cy5") || matches(channel, "m cherry")) {
+									print("if");
+									if(area_i < area_threshold) {
+										indexToDelete[i] = 1;
+									}
+									else indexToDelete[i] = 0;
+								} else {
+									print("else");
+									if(tot_area != 0 && area_i < area_threshold) {
+										indexToDelete[i] = 1;
+									}
+									else indexToDelete[i] = 0;
 								}
-								else indexToDelete[i] = 0;
 								
 								close("Mask");
 								close("Result of Mask");
@@ -387,12 +399,6 @@ for(cont=0; cont<dir.length; cont++) { // for each SNI
 								area_intact_net_cc = parseFloat(intact_net_measures[0]);
 								MFI_intact_net_cc = parseFloat(intact_net_measures[1]);
 								std_MFI_intact_net_cc = parseFloat(intact_net_measures[2]);
-
-								//area_intact_net_cc/tot_area_neuriteness
-								/*print("area_intact_net_cc: " + area_intact_net_cc);
-								print("tot_area_neuriteness: " + tot_area_neuriteness);
-								print("MFI_intact_net_cc: " + MFI_intact_net_cc);
-								print("std_MFI_intact_net_cc: " + std_MFI_intact_net_cc);*/
 								
 								// update buffers
 								bufferMeasures = image + ";" + epithHeight + ";" + tot_area_epithelium + ";" + tot_area_segmented_net + ";" + orig_mean + ";" + orig_std + ";" + area_segmented_net + ";" + (tot_area_segmented_net/tot_area_epithelium) + ";" + (area_segmented_net/tot_area_epithelium) + ";" + (area_segmented_net/tot_area_segmented_net) + ";" + bufferChannel + ";" + area_intact_net_cc + ";" + tot_area_neuriteness + ";" + (area_intact_net_cc/tot_area_neuriteness) + ";" + MFI_intact_net_cc + ";" + std_MFI_intact_net_cc + ";" + flooded_area + ";" + (flooded_area/tot_area_epithelium) + "\n";
@@ -417,7 +423,7 @@ for(cont=0; cont<dir.length; cont++) { // for each SNI
 			}
 		} else {
 			if(!fitcChannel) print("File: " + path + sni + "/newTiffImages/" + sni + "_FITC_Extended.tif does not exist");
-			if(!projOutlines) print("File: " + maxProjPath + sni + "_AB.zip does not exist");
+			if(!ABlines) print("File: " + maxProjPath + sni + "_AB.zip does not exist");
 		}
 	}
 }
@@ -433,7 +439,6 @@ for(countChannels=0; countChannels<neur_channels.length; countChannels++) {
 
 	summaryFile = File.open(summaryPath);
 	print(summaryFile, "image;number of pixels in the basal layer;average height basal layer;std basal layer;min basal layer;max basal layer;number of pixels in the apical layer;height apical layer;std apical layer;min apical layer;max apical layer;area - epithelium; area - marker of interest;MFI - marker of interest;stdMFI - marker of interest;area - neuriteness;relative area - marker of interest per total epithelium;realtive area - neuriteness per total epithelium;realtive area - neuriteness per marker of interest;area - marker of interest + parabasal layer;area - upper layer;area - lower layer;average height between marker of interest and apical layer;std height between marker of interest and apical layer;min height between marker of interest and apical layer;max height between marker of interest and apical layer;average height between marker of interest and basal layer;std height between marker of interest and basal layer;min height between marker of interest and basal layer;max height between marker of interest and basal layer;area - intact net;neuriteness total area;relative area - intact net per neuriteness total area;MFI intact net (original);stdMFI intact net (original);flooded area;relative area - flooded area per total epithelium\n");
-	//print(summaryFile, bufferMeasures);
 	if(matches(ch, ".*FITC.*"))
 		print(summaryFile, bufferMeasuresFITC);
 	else if(matches(ch, ".*cy3.*"))
@@ -446,6 +451,194 @@ for(countChannels=0; countChannels<neur_channels.length; countChannels++) {
 }
 
 /****************** functions ****************************/
+
+function getEpithelium(sni, out_path) {
+
+	// read original FITC channel and retrieve the binary mask of the tissue, excluding the black background
+	run("Bio-Formats Importer", "open=[" + path + sni + "/newTiffImages/" + sni + "_FITC_Extended.tif] color_mode=Default rois_import=[ROI manager] view=Hyperstack stack_order=XYCZT");
+	rename("mask_tissue");
+
+	// rough threshold to separate the background
+	if(bitDepth() == 8)
+		setThreshold(0, 256);
+	else 
+		setThreshold(5, 65535);
+	
+	setOption("BlackBackground", true);
+	run("Convert to Mask");
+	run("Create Selection");
+	run("Enlarge...", "enlarge=-3"); // cut some pixels of the border to remove the bright square around the SNI 
+	run("Clear Outside");
+	run("Select None");
+	
+	// create image that will be the binary mask of the epithelium
+	newImage("mask_epithelium", "8-bit black", getWidth(), getHeight(), 1);
+	roiManager("Open", maxProjPath + sni + "_AB.zip");
+	roiManager("Show All");
+	
+	roiManager("Select", 0);
+	Roi.getCoordinates(x1, y1);
+	run("Create Mask");
+	selectWindow("mask_epithelium");
+	roiManager("Select", 1);				
+	Roi.getCoordinates(x2, y2);
+	run("Create Mask");
+
+	// check the distance betweeen the ending points of each line and connect the points with minimum distance
+	dA = euclideanDist(x1[0],y1[0],x2[0],y2[0]);
+	dB = euclideanDist(x1[0],y1[0],x2[(x2.length-1)],y2[(y2.length-1)]);
+	
+	selectWindow("Mask");
+	if(dA < dB) {
+		makeLine(x1[0], y1[0], x2[0], y2[0]);
+		run("Create Mask");
+		makeLine(x1[(x1.length-1)], y1[(y1.length-1)], x2[(x2.length-1)], y2[(y2.length-1)]);
+		run("Create Mask");
+	} else {
+		makeLine(x1[0], y1[0], x2[(x2.length-1)], y2[(y2.length-1)]);
+		run("Create Mask");
+		makeLine(x1[(x1.length-1)], y1[(y1.length-1)], x2[0], y2[0]);
+		run("Create Mask");
+	}
+	run("Fill Holes");
+	run("Select None");
+
+	// final crop using both masks: tissue + epithelium
+	selectWindow("mask_tissue");
+	run("Create Selection");
+	selectWindow("Mask");
+	run("Restore Selection");
+	run("Clear Outside");
+	run("Select None");
+	
+	saveAs("Tif", out_path + "mask_epithelium.tif");
+
+	selectWindow("ROI Manager"); 
+	run("Close");
+	run("Close All");
+}
+
+function createLayer(ind, out_path) {
+	roiManager("Select", ind);
+	rName = Roi.getName();
+	run("Create Mask");
+	
+	open(out_path + "mask_epithelium.tif");
+	rename("epithelium");
+	run("Create Selection");
+	selectWindow("Mask");
+	run("Restore Selection");
+	run("Clear Outside");
+	run("Select None");
+
+	run("Set Measurements...", "area mean standard min redirect=None");
+	run("Set Scale...", "distance=1 known=1 unit=unit");
+	run("Analyze Particles...", "size=500-Infinity show=Masks");
+	setOption("BlackBackground", true);
+	run("Convert to Mask");
+
+	if(rName == "A") rename("apical");
+	else rename("basal");
+
+	close("Mask");
+	close("epithelium");
+}
+
+function getEpitheliumHeight(sni, out_path) {
+	measures = ";;;;"; // initialize buffer of measures. If it cannot be calculated, then return string csv format
+	
+	// check if corresponding file exists in max projection folder
+	if(File.exists(maxProjPath + sni + "_AB.zip")) {
+
+		open(maxProjPath + sni + ".tif");
+		// create image that will be the binary mask of the epithelium
+		newImage("mask_epithelium", "8-bit black", getWidth(), getHeight(), 1);
+		roiManager("Open", maxProjPath + sni + "_AB.zip");
+		roiManager("Show All");
+		close(maxProjPath + sni + ".tif");
+
+		countRois = roiManager("count");
+		
+		if(countRois == 2) { // then create contours of apical and basal layers and measure average height
+			createLayer(0, out_path);
+			selectWindow("mask_epithelium");
+			createLayer(1, out_path);
+			selectWindow("ROI Manager"); 
+			run("Close");
+			
+			AB_dist = calculateDistance("apical", "basal", true);
+			BA_dist = calculateDistance("basal", "apical", true);
+			run("Close All");
+
+			measures = AB_dist + ";" + BA_dist;
+		} else {
+			print("The number of input layers is different than 2");
+		}
+	} else {
+		print("File " + maxProjPath + sni + "_AB.zip does not exist");
+	}
+
+	return measures;
+}
+
+function calculateDistance(refLayer, targetLayer, areaValue) {
+	selectWindow(refLayer);
+	run("Invert");
+	run("Exact Euclidean Distance Transform (3D)");
+	rename("EDT-"+refLayer);
+	
+	selectWindow(targetLayer);
+	run("Set Measurements...", "area mean standard min redirect=EDT-"+refLayer+" decimal=4");
+
+	run("Analyze Particles...", "clear add");
+	selectWindow("EDT-"+refLayer);
+	run("Conversions...", "weighted");
+	setOption("ScaleConversions", false);
+	run("16-bit");
+	run("From ROI Manager");
+
+	// get number of pixels in reference layer
+	selectWindow("EDT-"+refLayer);
+	roiManager("Select", 0);
+	roiManager("Measure");
+	area = getResult("Area", 0);
+	selectWindow("Results"); 
+	run("Close");
+	
+	// get the other measures: average, std, min and max
+	if(useScale) run("Set Scale...", "distance=" + pixPerMic + " known=1 unit=micron");
+	selectWindow("EDT-"+refLayer);
+	roiManager("Select", 0);
+	roiManager("Measure");
+
+	if(useScale) {
+		mean = getResult("Mean", 0)/pixPerMic;
+		std = getResult("StdDev", 0)/pixPerMic;
+		min = getResult("Min", 0)/pixPerMic;
+		max = getResult("Max", 0)/pixPerMic;
+	} else {
+		mean = getResult("Mean", 0);
+		std = getResult("StdDev", 0);
+		min = getResult("Min", 0);
+		max = getResult("Max", 0);
+	}
+
+	selectWindow(refLayer);
+	run("Invert");
+
+	selectWindow("Results"); 
+	run("Close");
+	selectWindow("ROI Manager"); 
+	run("Close"); 
+
+	buffer = "";
+	if(areaValue)
+		buffer = "" + area + ";" + mean + ";" + std + ";" + min + ";" + max;
+	else
+		buffer = "" + mean + ";" + std + ";" + min + ";" + max;
+
+	return buffer;
+}
 
 function getFloodedArea(channel, out_path, overlay_path, maxProj_path, sni, img) {
 	open(out_path + "mask_epithelium.tif");
@@ -619,72 +812,6 @@ function getIntactNet_ConnectedComponent(path, sni, channel, out_path, overlay_p
 	return m;
 }
 
-function getEpithelium(sni, out_path) {
-
-	// read original FITC channel and retrieve the binary mask of the tissue, excluding the black background
-	run("Bio-Formats Importer", "open=[" + path + sni + "/newTiffImages/" + sni + "_FITC_Extended.tif] color_mode=Default rois_import=[ROI manager] view=Hyperstack stack_order=XYCZT");
-	rename("mask_tissue");
-
-	// rough threshold just to separate the background
-	if(bitDepth() == 8)
-		setThreshold(0, 256);
-	else 
-		setThreshold(5, 65535);
-	
-	setOption("BlackBackground", true);
-	run("Convert to Mask");
-	run("Create Selection");
-	run("Enlarge...", "enlarge=-3"); // cut some pixels of the border
-	run("Clear Outside");
-	run("Select None");
-	
-	// create image that will be the binary mask of the epithelium
-	newImage("mask_epithelium", "8-bit black", getWidth(), getHeight(), 1);
-	roiManager("Open", maxProjPath + sni + "_AB.zip");
-	roiManager("Show All");
-	
-	roiManager("Select", 0);
-	Roi.getCoordinates(x1, y1);
-	run("Create Mask");
-	selectWindow("mask_epithelium");
-	roiManager("Select", 1);				
-	Roi.getCoordinates(x2, y2);
-	run("Create Mask");
-
-	// check the distance betweeen the ending points of each line and connect the points with minimum distance
-	dA = euclideanDist(x1[0],y1[0],x2[0],y2[0]);
-	dB = euclideanDist(x1[0],y1[0],x2[(x2.length-1)],y2[(y2.length-1)]);
-	
-	selectWindow("Mask");
-	if(dA < dB) {
-		makeLine(x1[0], y1[0], x2[0], y2[0]);
-		run("Create Mask");
-		makeLine(x1[(x1.length-1)], y1[(y1.length-1)], x2[(x2.length-1)], y2[(y2.length-1)]);
-		run("Create Mask");
-	} else {
-		makeLine(x1[0], y1[0], x2[(x2.length-1)], y2[(y2.length-1)]);
-		run("Create Mask");
-		makeLine(x1[(x1.length-1)], y1[(y1.length-1)], x2[0], y2[0]);
-		run("Create Mask");
-	}
-	run("Fill Holes");
-	run("Select None");
-
-	// final crop using both masks: tissue + epithelium
-	selectWindow("mask_tissue");
-	run("Create Selection");
-	selectWindow("Mask");
-	run("Restore Selection");
-	run("Clear Outside");
-	run("Select None");
-	
-	saveAs("Tif", out_path + "mask_epithelium.tif");
-
-	selectWindow("ROI Manager"); 
-	run("Close");
-	run("Close All");
-}
-
 function getEpitheliumArea(sni, out_path) {
 
 	open(out_path + "mask_epithelium.tif");
@@ -726,7 +853,7 @@ function euclideanDist(x0,y0,x1,y1) {
 	return Math.sqrt(Math.pow((x1-x0), 2) + Math.pow(y1-y0, 2));
 }
 
-function containsSNI(querySNI) {
+function channelOfInterest(querySNI) {
 	for(i=0; i<neur_channels.length; i++) 
 		if(matches(querySNI, ".*" + neur_channels[i] + ".*"))
 			return true;
@@ -747,7 +874,7 @@ function getCombinedNeuriteness(sni, out_path) {
 	for(i=0; i<sniList.length; i++) {
 		image = sniList[i];
 		
-		if(containsSNI(image) && startsWith(image, "Ne_")) { // if channel of interest
+		if(channelOfInterest(image) && startsWith(image, "Ne_")) { // if channel of interest
 			
 			// crop polygon mask on the neuriteness image, apply threshold and get threshold value
 			run("Bio-Formats Importer", "open=[" + path + sni + "/" + image + "] color_mode=Default view=Hyperstack stack_order=XYCZT");
@@ -866,128 +993,6 @@ function getNeuriteness(sni, image, channel, out_path) {
 
 	saveAs("Tif", out_path + "thresholded_neuriteness_" + channel + ".tif");
 	run("Close All");
-}
-
-function createLayer(ind, out_path) {
-	roiManager("Select", ind);
-	rName = Roi.getName();
-	run("Create Mask");
-	
-	open(out_path + "mask_epithelium.tif");
-	rename("epithelium");
-	run("Create Selection");
-	selectWindow("Mask");
-	run("Restore Selection");
-	run("Clear Outside");
-	run("Select None");
-
-	run("Set Measurements...", "area mean standard min redirect=None");
-	run("Set Scale...", "distance=1 known=1 unit=unit");
-	run("Analyze Particles...", "size=500-Infinity show=Masks");
-	setOption("BlackBackground", true);
-	run("Convert to Mask");
-
-	if(rName == "A") rename("apical");
-	else rename("basal");
-
-	close("Mask");
-	close("epithelium");
-}
-
-function getEpitheliumHeight(sni, out_path) {
-	measures = ";;;;"; // initialize buffer of measures. If it cannot be calculated, then return string csv format
-	
-	// check if corresponding file exists in max projection folder
-	if(File.exists(maxProjPath + sni + "_AB.zip")) {
-
-		open(maxProjPath + sni + ".tif");
-		// create image that will be the binary mask of the epithelium
-		newImage("mask_epithelium", "8-bit black", getWidth(), getHeight(), 1);
-		roiManager("Open", maxProjPath + sni + "_AB.zip");
-		roiManager("Show All");
-		close(maxProjPath + sni + ".tif");
-
-		countRois = roiManager("count");
-		
-		if(countRois == 2) { // then create contours of apical and basal layers and measure average height
-			createLayer(0, out_path);
-			selectWindow("mask_epithelium");
-			createLayer(1, out_path);
-			selectWindow("ROI Manager"); 
-			run("Close");
-			
-			AB_dist = calculateDistance("apical", "basal", true);
-			BA_dist = calculateDistance("basal", "apical", true);
-			run("Close All");
-
-			measures = AB_dist + ";" + BA_dist;
-		} else {
-			print("The number of input layers is different than 2");
-		}
-	} else {
-		print("File " + maxProjPath + sni + "_AB.zip does not exist");
-	}
-
-	return measures;
-}
-
-function calculateDistance(refLayer, targetLayer, areaValue) {
-	selectWindow(refLayer);
-	run("Invert");
-	run("Exact Euclidean Distance Transform (3D)");
-	rename("EDT-"+refLayer);
-	
-	selectWindow(targetLayer);
-	run("Set Measurements...", "area mean standard min redirect=EDT-"+refLayer+" decimal=4");
-
-	run("Analyze Particles...", "clear add");
-	selectWindow("EDT-"+refLayer);
-	run("Conversions...", "weighted");
-	setOption("ScaleConversions", false);
-	run("16-bit");
-	run("From ROI Manager");
-
-	// get number of pixels in reference layer
-	selectWindow("EDT-"+refLayer);
-	roiManager("Select", 0);
-	roiManager("Measure");
-	area = getResult("Area", 0);
-	selectWindow("Results"); 
-	run("Close");
-	
-	// get the other measures: average, std, min and max
-	if(useScale) run("Set Scale...", "distance=" + pixPerMic + " known=1 unit=micron");
-	selectWindow("EDT-"+refLayer);
-	roiManager("Select", 0);
-	roiManager("Measure");
-
-	if(useScale) {
-		mean = getResult("Mean", 0)/pixPerMic;
-		std = getResult("StdDev", 0)/pixPerMic;
-		min = getResult("Min", 0)/pixPerMic;
-		max = getResult("Max", 0)/pixPerMic;
-	} else {
-		mean = getResult("Mean", 0);
-		std = getResult("StdDev", 0);
-		min = getResult("Min", 0);
-		max = getResult("Max", 0);
-	}
-
-	selectWindow(refLayer);
-	run("Invert");
-
-	selectWindow("Results"); 
-	run("Close");
-	selectWindow("ROI Manager"); 
-	run("Close");
-
-	buffer = "";
-	if(areaValue)
-		buffer = "" + area + ";" + mean + ";" + std + ";" + min + ";" + max;
-	else
-		buffer = "" + mean + ";" + std + ";" + min + ";" + max;
-
-	return buffer;
 }
 
 function findBiggestROI() {
