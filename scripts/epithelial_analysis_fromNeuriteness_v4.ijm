@@ -10,8 +10,8 @@
 
 /*************** parameters ******************************/
 
-path = "Z:/gismir/Annelie/test_08_07_22/SNI/"; // OneDrive_1_24-11-2021/Original folders/SNI/"; // images to be analyzed
-maxProjPath = "Z:/gismir/Annelie/test_08_07_22/Max/"; // path to the folder with the max projection files
+path = "Z:/gismir/Annelie/Ecad8bit/Images/"; // OneDrive_1_24-11-2021/Original folders/SNI/"; // images to be analyzed
+maxProjPath = "Z:/gismir/Annelie/Ecad8bit/Max proj/"; // path toZ:\gismir\Annelie\Ecad8bit the folder with the max projection files
 neur_channels = newArray("FITC"); // select channels to be combined for neuriteness
 threshold_method = "Otsu";
 distance_threshold = 10;
@@ -25,7 +25,7 @@ useScale = true;
 combine_neur = false;
 minThr = 0;
 maxThr = 1;
-exp_name = "TestFITC3";
+exp_name = "TestFITC2";
 
 /*********************************************************/
 
@@ -167,17 +167,13 @@ for(cont=0; cont<dir.length; cont++) { // for each SNI
 								run("Analyze Particles...", "clear summarize");
 								Table.rename("Summary", "Results");
 								tot_area = getResult("Total Area", 0);
-								print("tot_area: " + tot_area);
-								print("area_i: " + area_i);
 
 								if(matches(channel, "Cy5") || matches(channel, "m cherry")) {
-									print("if");
 									if(area_i < area_threshold) {
 										indexToDelete[i] = 1;
 									}
 									else indexToDelete[i] = 0;
 								} else {
-									print("else");
 									if(tot_area != 0 && area_i < area_threshold) {
 										indexToDelete[i] = 1;
 									}
@@ -459,8 +455,12 @@ function getEpithelium(sni, out_path) {
 	rename("mask_tissue");
 
 	// rough threshold to separate the background
-	if(bitDepth() == 8)
-		setThreshold(0, 256);
+	if(bitDepth() == 8) {
+		setThreshold(1, 255);
+		/*setAutoThreshold("Triangle dark");
+		setOption("BlackBackground", true);
+		run("Convert to Mask");*/
+	}
 	else 
 		setThreshold(5, 65535);
 	
@@ -979,7 +979,6 @@ function getNeuriteness(sni, image, channel, out_path) {
 	lower = lower[1];
 	lower = replace(lower, ",", "");
 	lower = parseInt(lower);
-	print(lower);
 	
 	lower = maxOf((lower*correc_factor), minThr*255);
 	upper = minOf(255, maxThr*255);
