@@ -9,14 +9,14 @@
 // ===============================
 
 
-/*************** parameters ******************************/
+/********************** parameters ***********************/
 
 // path to the input directory containing the SNIs
-path = "/Users/giselemiranda/ToOneDrive/AnnelieTjernlund2019-1/test_images/claudin1/";
+path = "Z:/gismir/Annelie/Mathias/10_11_22/DSG1/";
 // path to the input directory containing the maximum intensity projection that were used to draw AB lines
-maxProjPath = "/Users/giselemiranda/ToOneDrive/AnnelieTjernlund2019-1/test_images/claudin1 Max/";
+maxProjPath = "Z:/gismir/Annelie/Mathias/10_11_22/DSG1 Max/";
 // channel to be analyzed - names should be used according to the nomenclature of the files: cy3, FITC, Cy5 and m cherry
-channel_of_interest = "cy3";
+channel_of_interest = "FITC";
 // method chosen to threshold the NEURITENESS image
 threshold_method = "Otsu";
 // correction factor applied to the segmented NEURITENESS
@@ -39,7 +39,7 @@ useScale = true;
 minThr = 0;
 maxThr = 1;
 // name of the experiment that will be used to name the output folder
-exp_name = "claudin";
+exp_name = "FITC";
 
 /*********************************************************/
 
@@ -50,6 +50,7 @@ overlayPath = path + "overlay_" + exp_id + "/";
 if(!File.exists(overlayPath)) File.makeDirectory(overlayPath);
 
 for(countSNI=0; countSNI<dir.length; countSNI++) { // for each SNI
+	print("countSNI: " + countSNI);
 	sni = dir[countSNI];
 	images = getFileList(path+sni);
 	
@@ -67,8 +68,11 @@ for(countSNI=0; countSNI<dir.length; countSNI++) { // for each SNI
 		neur_path = path + sni + "/" + "Ne_" + sni + "_" + channel_of_interest + "_Extended.tif"; // processed neuriteness
 		img_path_max = maxProjPath + sni + ".tif"; // MIP of original channels
 		img_path_max_AB = maxProjPath + sni + "_AB.zip"; // AB lines
+		dapi_path = path + sni + "/newTiffImages/" + sni + "_DAPI_Extended.tif"; // DAPI path
+
+		bufferMeasures = bufferMeasures + sni + ";" + channel_of_interest + ";";
 		
-		if(File.exists(img_path) && File.exists(neur_path) && File.exists(img_path_max) && File.exists(img_path_max_AB)) { //check if FITC channel and the corresponding max projection exists for the segmentation of the epithelium
+		if(File.exists(img_path) && File.exists(neur_path) && File.exists(img_path_max) && File.exists(img_path_max_AB) && File.exists(dapi_path)) { //check if FITC channel and the corresponding max projection exists for the segmentation of the epithelium
 
 			// get epithelium
 			getEpithelium(sni, img_path, outpath);
@@ -80,8 +84,7 @@ for(countSNI=0; countSNI<dir.length; countSNI++) { // for each SNI
 			tot_area_epithelium = getEpitheliumArea(sni, outpath);
 	
 			// segment nuclei, if dapi channel exists
-			dapi_path = path + sni + "/newTiffImages/" + sni + "_DAPI_Extended.tif";
-			if(File.exists(dapi_path)) segmentNuclei(dapi_path, outpath);
+			segmentNuclei(dapi_path, outpath);
 			
 			// get MFI of whole epithelium
 			epithMFI = getEpitheliumMFI(img_path, outpath);
@@ -110,7 +113,10 @@ for(countSNI=0; countSNI<dir.length; countSNI++) { // for each SNI
 			selectWindow("ROI Manager"); 
 			run("Close");
 
-			// create buffers to store measures
+			// fill buffer of measures for the epithelium
+			bufferMeasures = bufferMeasures + epithHeight + ";" + tot_area_epithelium + ";" + epithMFI + ";";
+
+			// if there is a segmented ROI, then create fill buffer to store measures of the segmented ROI (bufferChannel)
 			bufferChannel = "";
 			
 			if(countSelecArea > 0) { // then the region of intesest is not empty
@@ -361,42 +367,44 @@ for(countSNI=0; countSNI<dir.length; countSNI++) { // for each SNI
 					selectWindow("basal");
 					run("Remove Overlay");
 					run("Close All");
+
+					tot_area_neuriteness = 0;
+					intact_net_measures = 0;
+					flooded_area = 0;
 					
+					tot_area_neuriteness = getNeuritenessArea(channel_of_interest, outpath);
+					intact_net_measures = getIntactNet_ConnectedComponent(img_path, neur_path, channel_of_interest, sni, outpath, overlayPath);
+					//this functions also returns the area, however we're not using here now
+					getIntactNet(channel_of_interest, sni, outpath, overlayPath);
+					// getFloodedArea depends on the results generated on function getIntactNet_ConnectedComponent
+					flooded_area = getFloodedArea(channel_of_interest, outpath, overlayPath, img_path_max_AB, sni);
+					
+					intact_net_measures = split(intact_net_measures," ");
+					area_intact_net_cc_holes = parseFloat(intact_net_measures[0]);
+					area_intact_net_cc = parseFloat(intact_net_measures[1]);
+					MFI_intact_net_cc = parseFloat(intact_net_measures[2]);
+					std_MFI_intact_net_cc = parseFloat(intact_net_measures[3]);
+					
+					// update buffers
+					bufferMeasures = bufferMeasures + bufferChannel + ";" + area_intact_net_cc + ";" + area_intact_net_cc_holes + ";" + tot_area_neuriteness + ";" + (area_intact_net_cc/tot_area_neuriteness) + ";" + MFI_intact_net_cc + ";" + std_MFI_intact_net_cc + ";" + flooded_area + ";" + (flooded_area/tot_area_epithelium) + "\n";	
 				} else {
 					print("No regions were selected for this SNI");
 					run("Close All");
-					bufferChannel = ";;;;;;;;;;;;;;;;;"; // complete csv buffer with empty symbols
+					bufferMeasures = bufferMeasures + "\n"; // complete csv buffer with empty symbols
 				}
 			} else {
 				print("No regions with area bigger than the area threshold were found");
 				run("Close All");
-				bufferChannel = ";;;;;;;;;;;;;;;;;"; // complete csv buffer with empty symbols
+				bufferMeasures = bufferMeasures + "\n"; // complete csv buffer with empty symbols
 			}
-			
-			tot_area_neuriteness = 0;
-			intact_net_measures = 0;
-			flooded_area = 0;
-			
-			tot_area_neuriteness = getNeuritenessArea(channel_of_interest, outpath);
-			intact_net_measures = getIntactNet_ConnectedComponent(img_path, neur_path, channel_of_interest, sni, outpath, overlayPath);
-			//this functions also returns the area, however we're not using here now
-			getIntactNet(channel_of_interest, sni, outpath, overlayPath);
-			// getFloodedArea depends on the results generated on function getIntactNet_ConnectedComponent
-			flooded_area = getFloodedArea(channel_of_interest, outpath, overlayPath, img_path_max_AB, sni);
-			
-			intact_net_measures = split(intact_net_measures," ");
-			area_intact_net_cc = parseFloat(intact_net_measures[0]);
-			MFI_intact_net_cc = parseFloat(intact_net_measures[1]);
-			std_MFI_intact_net_cc = parseFloat(intact_net_measures[2]);
-			
-			// update buffers
-			bufferMeasures = bufferMeasures + sni + ";" + channel_of_interest + ";" + epithHeight + ";" + tot_area_epithelium + ";" + epithMFI + ";" + bufferChannel + ";" + area_intact_net_cc + ";" + tot_area_neuriteness + ";" + (area_intact_net_cc/tot_area_neuriteness) + ";" + MFI_intact_net_cc + ";" + std_MFI_intact_net_cc + ";" + flooded_area + ";" + (flooded_area/tot_area_epithelium) + "\n";	
 		} else {
 			run("Close All");
+			bufferMeasures = bufferMeasures + "\n";
 			if(!File.exists(img_path)) print("File: " + path + sni + "/newTiffImages/" + sni + "_" + channel_of_interest + "_Extended.tif does not exist");
 			if(!File.exists(img_path_max)) print("File: " + maxProjPath + sni + ".tif does not exist");
 			if(!File.exists(img_path_max_AB)) print("File: " + maxProjPath + sni + "_AB.zip does not exist");
 			if(!File.exists(neur_path)) print("File: " + path + sni + "/" + "Ne_" + sni + "_" + channel_of_interest + "_Extended.tif does not exist");
+			if(!File.exists(dapi_path)) print("File: " + path + sni + "/newTiffImages/" + sni + "_DAPI_Extended.tif does not exist");
 		}
 	}
 }
@@ -407,7 +415,7 @@ if(File.exists(summaryPath))
 	File.delete(summaryPath);
 
 summaryFile = File.open(summaryPath);
-print(summaryFile, "sni;channel;number of pixels in the basal layer;average height basal layer;std basal layer;min basal layer;max basal layer;number of pixels in the apical layer;height apical layer;std apical layer;min apical layer;max apical layer;area - epithelium; MFI - epithelium; area - marker of interest;MFI - marker of interest;stdMFI - marker of interest;area - neuriteness;relative area - marker of interest per total epithelium;realtive area - neuriteness per total epithelium;realtive area - neuriteness per marker of interest;area - marker of interest + parabasal layer;area - upper layer;area - lower layer;average height between marker of interest and apical layer;std height between marker of interest and apical layer;min height between marker of interest and apical layer;max height between marker of interest and apical layer;average height between marker of interest and basal layer;std height between marker of interest and basal layer;min height between marker of interest and basal layer;max height between marker of interest and basal layer;area - intact net;neuriteness total area;relative area - intact net per neuriteness total area;MFI intact net (original);stdMFI intact net (original);flooded area;relative area - flooded area per total epithelium\n");
+print(summaryFile, "sni;channel;number of pixels in the basal layer;average height basal layer;std basal layer;min basal layer;max basal layer;number of pixels in the apical layer;height apical layer;std apical layer;min apical layer;max apical layer;area - epithelium; MFI - epithelium; area - marker of interest;MFI - marker of interest;stdMFI - marker of interest;area - neuriteness;relative area - marker of interest per total epithelium;realtive area - neuriteness per total epithelium;realtive area - neuriteness per marker of interest;area - marker of interest + parabasal layer;area - upper layer;area - lower layer;average height between marker of interest and apical layer;std height between marker of interest and apical layer;min height between marker of interest and apical layer;max height between marker of interest and apical layer;average height between marker of interest and basal layer;std height between marker of interest and basal layer;min height between marker of interest and basal layer;max height between marker of interest and basal layer;area - intact net;area - intact net with holes;neuriteness total area;relative area - intact net per neuriteness total area;MFI intact net (original);stdMFI intact net (original);flooded area;relative area - flooded area per total epithelium\n");
 print(summaryFile, bufferMeasures);
 File.close(summaryFile);
 
@@ -752,7 +760,7 @@ function getIntactNet_ConnectedComponent(img_path, neur_path, channel, sni, out_
 	run("Duplicate...", "markerImg");
 	rename("markerImg");
 	
-	// filter connected components by size
+	// filter connected components by size and created filtered mask
 	run("Analyze Particles...", "size="+area_connected_threshold+"-Infinity show=Masks include clear"); // include holes
 	run("Convert to Mask");
 	run("Create Selection");
@@ -761,16 +769,25 @@ function getIntactNet_ConnectedComponent(img_path, neur_path, channel, sni, out_
 	run("Clear Outside");
 	run("Select None");
 
-	// measure MFI of filtered connected components and save LUT image
+	selectWindow("Mask of markerImg");
+	if(useScale) run("Set Scale...", "distance=" + pixPerMic + " known=1 unit=micron");
+	run("Measure");
+	area_with_holes = getResult("Area", 0);
+	selectWindow("Results"); 
+	run("Close");
+	
+	// measure MFI of filtered connected components and save LUT image (glasbey) - not taking into account holes in the binary mask
+	selectWindow("markerImg");
+	run("Duplicate...", "markerImg_intactNet");
+	rename("markerImg_intactNet");
+	
 	run("Set Measurements...", "area mean standard min redirect=original decimal=4");
 	run("Analyze Particles...", "size="+area_connected_threshold+"-Infinity show=[Count Masks] clear");
 	run("glasbey");
 	saveAs("PNG", out_path + "intact_net_connected_" + channel + ".png");
 	saveAs("PNG", overlay_path + "intact_net_connected_" + channel + "_" + sni);
 	
-	setThreshold(1, 65535, "raw");
-	setOption("BlackBackground", true);
-	run("Convert to Mask");
+	selectWindow("markerImg");
 	run("Create Selection");
 	selectWindow("original");
 	run("Restore Selection");
@@ -780,11 +797,13 @@ function getIntactNet_ConnectedComponent(img_path, neur_path, channel, sni, out_
 		tot_area = getResult("Area", 0);
 		mfi = getResult("Mean", 0);
 		stdMfi = getResult("StdDev", 0);
-		m = d2s(tot_area,4) + " " + d2s(mfi,4) + " " + d2s(stdMfi,4);
-		
 		selectWindow("Results"); 
 		run("Close");
-	} else m = "0 0 0";
+
+		// concatenate all measures 
+		m = d2s(area_with_holes,4) + " " + d2s(tot_area,4) + " " + d2s(mfi,4) + " " + d2s(stdMfi,4);
+		print("m: " + m);
+	} else m = "0 0 0 0";
 	
 	run("Close All");
 	return m;
@@ -792,7 +811,6 @@ function getIntactNet_ConnectedComponent(img_path, neur_path, channel, sni, out_
 
 function getIntactNet(channel, sni, out_path, overlay_path) {
 
-	//open(out_path + "thresholded_neuriteness_" + channel + ".tif");
 	open(out_path + "thresholded_neuriteness_segmented_region_" + channel + ".tif");
 		
 	run("Median...", "radius=4");
@@ -835,7 +853,6 @@ function getFloodedArea(channel, out_path, overlay_path, maxProj_path, sni) {
 	hei = getHeight();
 	newImage("temp", "8-bit black", wid, hei, 1);
 	
-	//roiManager("Open", maxProjPath + sni + "_AB.zip");
 	roiManager("Open", maxProj_path);
 	roiManager("Show All");
 	
