@@ -12,11 +12,11 @@
 /********************** parameters ***********************/
 
 // path to the input directory containing the SNIs
-path = "Z:/gismir/Annelie/Mathias/10_11_22/DSG1/";
+path = "/Users/giselemiranda/Downloads/Gisele apical restriction/SNI/";
 // path to the input directory containing the maximum intensity projection that were used to draw AB lines
-maxProjPath = "Z:/gismir/Annelie/Mathias/10_11_22/DSG1 Max/";
+maxProjPath = "/Users/giselemiranda/Downloads/Gisele apical restriction/max/";
 // channel to be analyzed - names should be used according to the nomenclature of the files: cy3, FITC, Cy5 and m cherry
-channel_of_interest = "FITC";
+channel_of_interest = "cy3";
 // method chosen to threshold the NEURITENESS image
 threshold_method = "Otsu";
 // correction factor applied to the segmented NEURITENESS
@@ -39,7 +39,7 @@ useScale = true;
 minThr = 0;
 maxThr = 1;
 // name of the experiment that will be used to name the output folder
-exp_name = "FITC";
+exp_name = "Cy3_pipeline5";
 
 /*********************************************************/
 
@@ -169,8 +169,11 @@ for(countSNI=0; countSNI<dir.length; countSNI++) { // for each SNI
 					area_intersection = getResult("Total Area", 0);
 					
 					if(matches(channel_of_interest, "cy3") || matches(channel_of_interest, "FITC")) {
-						if(area_intersection != 0) indexToDelete[i] = 1;
+						if(area_intersection != 0 && area_i < area_threshold) indexToDelete[i] = 1;
 						else indexToDelete[i] = 0;
+					} else {
+						if(area_i < area_threshold) indexToDelete[i] = 1;
+						else indexToDelete[i] = 0;	
 					}
 					
 					close("Mask");
@@ -186,6 +189,8 @@ for(countSNI=0; countSNI<dir.length; countSNI++) { // for each SNI
 						run("Create Mask");
 					}
 				}
+				
+				print("countSelectedROIs: " + countSelectedROIs);
 				run("Select None");
 				selectWindow("ROI Manager"); 
 				run("Close");
