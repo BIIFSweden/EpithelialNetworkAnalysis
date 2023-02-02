@@ -12,17 +12,17 @@
 /********************** parameters ***********************/
 
 // path to the input directory containing the SNIs
-path = "/Users/giselemiranda/Downloads/Gisele apical restriction/SNI/";
+path = "Z:/gismir/Annelie/Mathias/31_01_23/SNI/";
 // path to the input directory containing the maximum intensity projection that were used to draw AB lines
-maxProjPath = "/Users/giselemiranda/Downloads/Gisele apical restriction/max/";
+maxProjPath = "Z:/gismir/Annelie/Mathias/31_01_23/Max/";
 // channel to be analyzed - names should be used according to the nomenclature of the files: cy3, FITC, Cy5 and m cherry
-channel_of_interest = "cy3";
+channel_of_interest = "FITC";
 // method chosen to threshold the NEURITENESS image
 threshold_method = "Otsu";
 // correction factor applied to the segmented NEURITENESS
-correc_factor = 1.5;
+correc_factor = 1.5; //1.5;
 // distance threshold used to segment the REGION OF INTEREST, defined based on the EDT applied over NEURITENESS IMAGE
-distance_threshold = 10;
+distance_threshold = 7; //10;
 // area threshold to filter the segmented regions
 area_threshold = 70000;
 // area threshold to filter the connected components of the intact net
@@ -36,10 +36,10 @@ pixPerMic = 3.07693;
 // if scale should be used, otherwise results will be given in pixels
 useScale = true;
 // used to set up minimum and maximum threshold values to segment the neuriteness image
-minThr = 0;
+minThr = 0.1; //0;
 maxThr = 1;
 // name of the experiment that will be used to name the output folder
-exp_name = "Cy3_pipeline5";
+exp_name = "FITC_pipeline5_v3";
 
 /*********************************************************/
 
@@ -204,12 +204,12 @@ for(countSNI=0; countSNI<dir.length; countSNI++) { // for each SNI
 					// obs: include this code if holes in the thresholded neuriteness mask should not be included in the final segmented region
 					// create selection over the final mask and crop the corresponding boundary on the original neuriteness
 					/*selectWindow("Mask");
-					run("Create Selection");
-					selectWindow("segmented_region_final");
-					run("Restore Selection");
-					run("Clear Outside");
-					run("Select None");
-					selectWindow("segmented_region_final");*/
+					//run("Create Selection");
+					//selectWindow("segmented_region_final");
+					//run("Restore Selection");
+					//run("Clear Outside");
+					//run("Select None");
+					//selectWindow("segmented_region_final");*/
 					
 					selectWindow("Mask");
 
@@ -383,6 +383,7 @@ for(countSNI=0; countSNI<dir.length; countSNI++) { // for each SNI
 					getIntactNet(channel_of_interest, sni, outpath, overlayPath);
 					// getFloodedArea depends on the results generated on function getIntactNet_ConnectedComponent
 					flooded_area = getFloodedArea(channel_of_interest, outpath, overlayPath, img_path_max_AB, sni);
+					if (flooded_area == -1) flooded_area = tot_area_epithelium; // then flooded_area will be equal the area of the epithelium
 					
 					intact_net_measures = split(intact_net_measures," ");
 					area_intact_net_cc_holes = parseFloat(intact_net_measures[0]);
@@ -391,7 +392,7 @@ for(countSNI=0; countSNI<dir.length; countSNI++) { // for each SNI
 					std_MFI_intact_net_cc = parseFloat(intact_net_measures[3]);
 					
 					// update buffers
-					bufferMeasures = bufferMeasures + bufferChannel + ";" + area_intact_net_cc + ";" + area_intact_net_cc_holes + ";" + tot_area_neuriteness + ";" + (area_intact_net_cc/tot_area_neuriteness) + ";" + MFI_intact_net_cc + ";" + std_MFI_intact_net_cc + ";" + flooded_area + ";" + (flooded_area/tot_area_epithelium) + "\n";	
+					bufferMeasures = bufferMeasures + bufferChannel + ";" + area_intact_net_cc + ";" + area_intact_net_cc_holes + ";" + tot_area_neuriteness + ";" + (area_intact_net_cc/tot_area_neuriteness) + ";" + MFI_intact_net_cc + ";" + std_MFI_intact_net_cc + ";" + flooded_area + ";" + (flooded_area/tot_area_epithelium) + "\n";
 				} else {
 					print("No regions were selected for this SNI");
 					run("Close All");
@@ -752,7 +753,6 @@ function getNeuritenessArea(channel, out_path) {
 }
 
 function getIntactNet_ConnectedComponent(img_path, neur_path, channel, sni, out_path, overlay_path) {
-	
 	// open original channel image
 	//run("Bio-Formats Importer", "open=[" + path + sni + "/newTiffImages/" + img_file + "] color_mode=Default view=Hyperstack stack_order=XYCZT");
 	open(img_path);
@@ -765,52 +765,60 @@ function getIntactNet_ConnectedComponent(img_path, neur_path, channel, sni, out_
 	run("Duplicate...", "markerImg");
 	rename("markerImg");
 	
-	// filter connected components by size and created filtered mask
-	run("Analyze Particles...", "size="+area_connected_threshold+"-Infinity show=Masks include clear"); // include holes
-	run("Convert to Mask");
-	run("Create Selection");
-	selectWindow("markerImg");
-	run("Restore Selection");
-	run("Clear Outside");
-	run("Select None");
-
-	selectWindow("Mask of markerImg");
-	if(useScale) run("Set Scale...", "distance=" + pixPerMic + " known=1 unit=micron");
-	run("Measure");
-	area_with_holes = getResult("Area", 0);
-	selectWindow("Results"); 
+	// filter connected components by size and create filtered mask
+	run("Analyze Particles...", "size="+area_connected_threshold+"-Infinity show=Masks clear include add"); // include holes
+	count = roiManager("count");
+	selectWindow("ROI Manager"); 
 	run("Close");
 	
-	// measure MFI of filtered connected components and save LUT image (glasbey) - not taking into account holes in the binary mask
-	selectWindow("markerImg");
-	run("Duplicate...", "markerImg_intactNet");
-	rename("markerImg_intactNet");
+	if(count != 0) {
+		
+		run("Convert to Mask");
+		run("Create Selection");
+		selectWindow("markerImg");
+		run("Restore Selection");
+		run("Clear Outside");
+		run("Select None");
 	
-	run("Set Measurements...", "area mean standard min redirect=original decimal=4");
-	run("Analyze Particles...", "size="+area_connected_threshold+"-Infinity show=[Count Masks] clear");
-	run("glasbey");
-	saveAs("PNG", out_path + "intact_net_connected_" + channel + ".png");
-	saveAs("PNG", overlay_path + "intact_net_connected_" + channel + "_" + sni);
-	
-	selectWindow("markerImg");
-	run("Create Selection");
-	selectWindow("original");
-	run("Restore Selection");
-	run("Measure");
-	
-	if(nResults > 0) {
-		tot_area = getResult("Area", 0);
-		mfi = getResult("Mean", 0);
-		stdMfi = getResult("StdDev", 0);
+		selectWindow("Mask of markerImg");
+		if(useScale) run("Set Scale...", "distance=" + pixPerMic + " known=1 unit=micron");
+		run("Measure");
+		area_with_holes = getResult("Area", 0);
 		selectWindow("Results"); 
 		run("Close");
 
-		// concatenate all measures 
-		m = d2s(area_with_holes,4) + " " + d2s(tot_area,4) + " " + d2s(mfi,4) + " " + d2s(stdMfi,4);
-		print("m: " + m);
+		// measure MFI of filtered connected components and save LUT image (glasbey) - not taking into account holes in the binary mask
+		selectWindow("markerImg");
+		run("Duplicate...", "markerImg_intactNet");
+		rename("markerImg_intactNet");
+		
+		run("Set Measurements...", "area mean standard min redirect=original decimal=4");
+		run("Analyze Particles...", "size="+area_connected_threshold+"-Infinity show=[Count Masks] clear");
+		run("glasbey");
+		saveAs("PNG", out_path + "intact_net_connected_" + channel + ".png");
+		saveAs("PNG", overlay_path + "intact_net_connected_" + channel + "_" + sni);
+		
+		selectWindow("markerImg");
+		run("Create Selection");
+		selectWindow("original");
+		run("Restore Selection");
+		run("Measure");
+		
+		if(nResults > 0) {
+			tot_area = getResult("Area", 0);
+			mfi = getResult("Mean", 0);
+			stdMfi = getResult("StdDev", 0);
+			selectWindow("Results"); 
+			run("Close");
+	
+			// concatenate all measures 
+			m = d2s(area_with_holes,4) + " " + d2s(tot_area,4) + " " + d2s(mfi,4) + " " + d2s(stdMfi,4);
+		} 
 	} else m = "0 0 0 0";
 	
 	run("Close All");
+	
+	print(m);
 	return m;
 }
 
@@ -875,41 +883,43 @@ function getFloodedArea(channel, out_path, overlay_path, maxProj_path, sni) {
 	selectWindow("ROI Manager"); 
 	run("Close");
 
-	open(out_path + "intact_net_connected_" + channel + ".png");
-	setThreshold(1, 65535, "raw");
-	setOption("BlackBackground", true);
-	run("Convert to Mask");
-	rename("neuriteness");
+	if(File.exists(out_path + "intact_net_connected_" + channel + ".png")) {
+		open(out_path + "intact_net_connected_" + channel + ".png");
+		setThreshold(1, 65535, "raw");
+		setOption("BlackBackground", true);
+		run("Convert to Mask");
+		rename("neuriteness");
+			
+		selectWindow("mask_epithelium.tif");
+		run("Duplicate...", "epithelium_outline");
+		rename("epithelium_outline");
+		run("Outline");
 		
-	selectWindow("mask_epithelium.tif");
-	run("Duplicate...", "epithelium_outline");
-	rename("epithelium_outline");
-	run("Outline");
-	
-	// create marker for whatershed
-	selectWindow("apical");
-	run("Morphological Filters", "operation=Dilation element=Square radius=20");
-	rename("marker");
-	imageCalculator("AND create", "mask_epithelium.tif","marker");
-	rename("marker_processed");
-	run("Erode");
-	
-	imageCalculator("Add create", "epithelium_outline","neuriteness");
-	rename("mask_watershed");
-	run("Invert");
-	run("Morphological Reconstruction", "marker=marker_processed mask=mask_watershed type=[By Dilation] connectivity=4");
-	
-	saveAs("Tif", overlay_path + "flooded_region_" + channel + "_" + sni);
-	saveAs("Tif", out_path + "flooded_region_" + channel + ".tif");
-	rename("marker_processed-rec");
-	
-	if(useScale) run("Set Scale...", "distance=" + pixPerMic + " known=1 unit=micron");
-	run("Set Measurements...", "area mean standard min redirect=None decimal=4");
-	run("Analyze Particles...", "clear summarize");
-	Table.rename("Summary", "Results");
-	area_flooded = getResult("Total Area", 0);
-	selectWindow("Results"); 
-	run("Close");
+		// create marker for whatershed
+		selectWindow("apical");
+		run("Morphological Filters", "operation=Dilation element=Square radius=20");
+		rename("marker");
+		imageCalculator("AND create", "mask_epithelium.tif","marker");
+		rename("marker_processed");
+		run("Erode");
+		
+		imageCalculator("Add create", "epithelium_outline","neuriteness");
+		rename("mask_watershed");
+		run("Invert");
+		run("Morphological Reconstruction", "marker=marker_processed mask=mask_watershed type=[By Dilation] connectivity=4");
+		
+		saveAs("Tif", overlay_path + "flooded_region_" + channel + "_" + sni);
+		saveAs("Tif", out_path + "flooded_region_" + channel + ".tif");
+		rename("marker_processed-rec");
+		
+		if(useScale) run("Set Scale...", "distance=" + pixPerMic + " known=1 unit=micron");
+		run("Set Measurements...", "area mean standard min redirect=None decimal=4");
+		run("Analyze Particles...", "clear summarize");
+		Table.rename("Summary", "Results");
+		area_flooded = getResult("Total Area", 0);
+		selectWindow("Results"); 
+		run("Close");
+	} else area_flooded = -1;
 	
 	run("Close All");
 	return(area_flooded);
