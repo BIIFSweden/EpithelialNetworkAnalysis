@@ -12,15 +12,15 @@
 /********************** parameters ***********************/
 
 // path to the input directory containing the SNIs
-path = "Z:/gismir/Annelie/Mathias/31_01_23/SNI/";
+path = "/Users/giselemiranda/Downloads/Gisele Cy5 (ZO1)/HIV/";
 // path to the input directory containing the maximum intensity projection that were used to draw AB lines
-maxProjPath = "Z:/gismir/Annelie/Mathias/31_01_23/Max/";
+maxProjPath = "/Users/giselemiranda/Downloads/Gisele Cy5 (ZO1)/HIV_Max/";
 // channel to be analyzed - names should be used according to the nomenclature of the files: cy3, FITC, Cy5 and m cherry
-channel_of_interest = "FITC";
+channel_of_interest = "Cy5";
 // method chosen to threshold the NEURITENESS image
 threshold_method = "Otsu";
 // correction factor applied to the segmented NEURITENESS
-correc_factor = 1.5; //1.5;
+correc_factor = 0.8; //1.5;
 // distance threshold used to segment the REGION OF INTEREST, defined based on the EDT applied over NEURITENESS IMAGE
 distance_threshold = 7; //10;
 // area threshold to filter the segmented regions
@@ -36,10 +36,10 @@ pixPerMic = 3.07693;
 // if scale should be used, otherwise results will be given in pixels
 useScale = true;
 // used to set up minimum and maximum threshold values to segment the neuriteness image
-minThr = 0.1; //0;
+minThr = 0; //0;
 maxThr = 1;
 // name of the experiment that will be used to name the output folder
-exp_name = "FITC_pipeline5_v3";
+exp_name = "Cy5_pipeline5";
 
 /*********************************************************/
 
@@ -699,7 +699,7 @@ function getNeuriteness(channel, input_path, out_path) {
 	rename("mask_neuriteness");
 	run("Multi OtsuThreshold", "numlevels=3");
 	
-	selectWindow("Region 1");
+	/*selectWindow("Region 1");
 	setAutoThreshold("Otsu dark");
 	setOption("BlackBackground", true);
 	run("Convert to Mask");
@@ -709,12 +709,17 @@ function getNeuriteness(channel, input_path, out_path) {
 	setOption("BlackBackground", true);
 	run("Convert to Mask");
 	
-	imageCalculator("Add create", "Region 1","Region 2");
+	imageCalculator("Add create", "Region 1","Region 2");*/
 
 	logString = getInfo("log");
 	buffer = split(logString, "\n");
 	buffer = split(buffer[buffer.length-1], " ");
-	lower = split(buffer[2], "=");
+	
+	lower = "";
+	if(matches(channel, "cy3") || matches(channel, "FITC"))
+		lower = split(buffer[2], "=");
+	else
+		lower = split(buffer[3], "=");
 	lower = lower[1];
 	lower = replace(lower, ",", "");
 	lower = parseInt(lower);
@@ -724,7 +729,6 @@ function getNeuriteness(channel, input_path, out_path) {
 	
 	// apply correction factor to "lower" threshold
 	selectWindow("neuriteness");
-	//setThreshold((lower*correc_factor), 255);
 	setThreshold(lower, upper);
 	setOption("BlackBackground", true);
 	run("Convert to Mask");
