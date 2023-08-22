@@ -1,32 +1,53 @@
 # Structural Analysis of the Cervical Epithelial Tissue
 
+### Overview
 
-### 1.	Input directory and naming convetion
+### Software Requirements
 
-The input directory should contain the SNIs. Each subfolder of the input directory corresponds to a single SNI and it should contain all the fluorescent channels saved as *tif* files. The names of the subfolders must start with *SNI* or *Neg SNI* in the case of negative controls. The input directory template is illustrated below. 
+The software listed below should be installed before running the scripts available in this repository.
 
-<a href="url"><img src="img/input_directory.png" height="auto" width="600" ></a>
+* [Fiji](https://fiji.sc)
+* [MorphoLibJ plugin](https://imagej.net/plugins/morpholibj) for Fiji
 
-### 2.	Software requirements
+* [Matlab](https://se.mathworks.com/products/matlab.html) is required to run the script that generates the *neuriteness* image. The library *vesselness2d* is used to generate the enhanced neuriteness networks and is available in this [link](https://github.com/BoguslawObara/vesselness2d).
 
-The software listed below should be installed before running the scripts available in the repository. 
+### Usage
 
-* [Fiji](https://fiji.sc): follow the instructions in the link to download Fiji.
-* [MorphoLibJ plugin](https://imagej.net/plugins/morpholibj): follow the instructions in the link to install MorphoLibJ plugin.
+1. Download the Git repository for this project.
+2. Navigate to the downloaded git repository directory
+3. To run the Fiji scripts (*.ijm*), open Fiji and go to Plugins – Macros – Edit... and browse the corresponding file. 
+4. Set the parameters accordingly
+5. Execute the macro by pressing the *Run* button
 
-To run the script that generates the *neuriteness* image, [Matlab](https://se.mathworks.com/products/matlab.html) is required. The library *vesselness2d* is used to generate the enhanced neuriteness networks and is available in this [link](https://github.com/BoguslawObara/vesselness2d).
+### Parameter set
 
-### 3.	Neuriteness script
+### *Neuriteness* script
 
-The Matlab script *batch_neuriteness.m* generates the *neuriteness* images for each fluorescent channel of each SNI using the method proposed by: Obara, Boguslaw, et al. "Contrast-independent curvilinear structure detection in biomedical images." *IEEE Transactions on Image Processing* 21.5 (2012): 2572-2581. The figure below shows an example of a *neuriteness* network, obtained from a sample image.
+The Matlab script *batch_neuriteness.m* generates the *neuriteness* images for each fluorescent channel of each SNI using the method proposed by: Obara, Boguslaw, et al. "Contrast-independent curvilinear structure detection in biomedical images." *IEEE Transactions on Image Processing* 21.5 (2012): 2572-2581.
+
+ The figure below shows an example of a *neuriteness* network, obtained from a sample image.
 
 <a href="url"><img src="img/neuriteness.png" height="auto" width="700" ></a>
 
 To run *batch_neuriteness.m*, load the script in Matlab and then update the corresponding local path in the *addpath* command, which should be linked to the [*vesselness2d* library](https://github.com/BoguslawObara/vesselness2d).
 
-After updating the library path, press the *Run* button. A file browser window will appear and the input directory should be selected. Wait until all the SNIs are processed. The corresponding neuriteness images of each fluorescent channel of the input SNIs are saved in the subfolders of the input directory. The output file names contain the prefix *Ne_*, as shown in the figure below.
+After updating the library path, press the *Run* button. A file browser window will appear and the input directory should be selected. Wait until all the SNIs are processed. The corresponding neuriteness images of each fluorescent channel of the input SNIs are saved in the subfolders of the input directory. The output files contain the prefix *Ne_*, as shown in the figure below.
 
 <a href="url"><img src="img/input_directory_neuriteness.png" height="auto" width="600" ></a>
+
+### Support
+
+If you find a bug, please [raise an issue](https://github.com/BIIFSweden/EpithelialNetworkAnalysis/issues/new)
+
+### Authors
+
+[SciLifeLab BioImage Informatics Facility (BIIF)](https://biifsweden.github.io/) project lead: Gisele Miranda
+
+### Licence
+
+
+
+
 
 ### 4.	Maximum intensity projection pipeline for layer annotation
 
@@ -56,7 +77,7 @@ The workflow implemented in the *epithelial_analysis.ijm* script can be summariz
 * Segmentation of the epithelium;
 * Calculation of the epithelium height based on Euclidean distance transform (EDT);
 * Segmentation of the neuriteness network for each fluorescent marker;
-* Quantification the segmented neuriteness;
+* Quantification of the segmented neuriteness;
 * Calculation of the distance between the segmented fluorescent marker to the apical and basal layers;
 * Segmentation and quantification of the intact net;
 
@@ -73,6 +94,12 @@ The calculation of the epithelium height is performed using the Euclidean distan
 <a href="url"><img src="img/edt_apical_basal.png" height="auto" width="700" ></a>
 
 #### c. Segmentation of the neuriteness image
+
+Otsu threshold is used for the segmentation of the neuriteness image. In addition, it is also possible to set a correction factor for the threshold value, allowing a few adjustments in the final segmentation result. In Fig. 12, we can observe the effect of different values of the correction factor.
+
+After thresholding, the EDT map is generated from the segmented neuriteness. A distance threshold is then defined in order to obtain a binary mask corresponding to the final segmented region. The distance threshold is a parameter of this workflow. Segmented regions using different distance threshold values can be seen in the figure below
+
+Notice that, the EDT transform is now applied on the thresholded neuriteness. The same transform is applied on the apical and basal layers to calculate the epithelium height, as explained in section 6.3.
 
 
 
