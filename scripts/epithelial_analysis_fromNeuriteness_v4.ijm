@@ -10,12 +10,12 @@
 
 /*************** parameters ******************************/
 
-path = "/Users/giselemiranda/Desktop/Backup/Annelie/Mathias/8bit-Ecadherin/test/SNI/"; //"/Users/giselemiranda/Desktop/Backup/Annelie/Mathias/OneDrive_1_24-11-2021/Original folders/SNI/"; // images to be analyzed
-maxProjPath = "/Users/giselemiranda/Desktop/Backup/Annelie/Mathias/8bit-Ecadherin/test/max/"; //"/Users/giselemiranda/Desktop/Backup/Annelie/Mathias/OneDrive_1_24-11-2021/Original folders/Max/"; // path to the folder with the max projection files
-neur_channels = newArray("FITC"); // select channels to be combined for neuriteness
+path = "/Users/giselemiranda/Downloads/Gisele apical restriction/SNI/"; // images to be analyzed
+maxProjPath = "/Users/giselemiranda/Downloads/Gisele apical restriction/max/"; // path to the folder with the max projection files
+neur_channels = newArray("cy3"); // select channels to be combined for neuriteness
 threshold_method = "Otsu";
-distance_threshold = 10;
-correc_factor = 1.5;
+distance_threshold = 7; //10;
+correc_factor = 1; //1.5;
 area_threshold = 70000;
 area_connected_threshold = 5000;
 radiusDilation = 5;
@@ -23,9 +23,9 @@ nucleiSize = 1000;
 pixPerMic = 3.07693;
 useScale = true;
 combine_neur = false;
-minThr = 0;
+minThr = 0.08; //0;
 maxThr = 1;
-exp_name = "TestFITC";
+exp_name = "Cy3_pipeline4_M";
 
 /*********************************************************/
 
@@ -39,10 +39,10 @@ if(combine_neur) exp_id = exp_id + "_combined";
 overlayPath = path + "overlay_" + exp_id + "/";
 if(!File.exists(overlayPath)) File.makeDirectory(overlayPath);
 
-for(cont=0; cont<dir.length; cont++) { // for each SNI
+for(cont=0; cont<1; cont++) {//dir.length; cont++) { // for each SNI
 	sni = dir[cont];
 	images = getFileList(path+sni);
-
+	
 	// check if input folder is a SNI. It should start with "SNI" or "Neg SNI" (for negative control)
 	if(startsWith(sni, "SNI") || startsWith(sni, "Neg SNI")) {
 		outpath = path + sni + "output_" + exp_id + "/";
@@ -50,6 +50,7 @@ for(cont=0; cont<dir.length; cont++) { // for each SNI
 		
 		// crop epithelium region
 		print("\n"+sni);
+		print("cont: " + cont);
 		sni = replace(sni, "/", "");
 
 		// check if original image and AB lines exist
@@ -245,7 +246,9 @@ for(cont=0; cont<dir.length; cont++) { // for each SNI
 								run("Close");
 		
 								// get MFI from original channel image
-								run("Bio-Formats Importer", "open=[" + path + sni + "/newTiffImages/" + replace(image, "Ne_", "") + "] color_mode=Default view=Hyperstack stack_order=XYCZT");
+								//run("Bio-Formats Importer", "open=[" + path + sni + "/newTiffImages/" + replace(image, "Ne_", "") + "] color_mode=Default view=Hyperstack stack_order=XYCZT");
+								print("1");
+								open(path + sni + "/newTiffImages/" + replace(image, "Ne_", ""));
 								rename("original");
 								run("Restore Selection");
 								
@@ -262,7 +265,9 @@ for(cont=0; cont<dir.length; cont++) { // for each SNI
 								close();
 		
 								// get MFI from original neuriteness image
-								run("Bio-Formats Importer", "open=[" + path + sni + "/" + image + "] color_mode=Default view=Hyperstack stack_order=XYCZT");
+								//run("Bio-Formats Importer", "open=[" + path + sni + "/" + image + "] color_mode=Default view=Hyperstack stack_order=XYCZT");
+								print("2");
+								open(path + sni + "/" + image);
 								rename("neuriteness");
 								run("Restore Selection");
 		
@@ -274,13 +279,17 @@ for(cont=0; cont<dir.length; cont++) { // for each SNI
 								run("Close All");
 
 								// get parabasal, upper and lower layers
-								run("Bio-Formats Importer", "open=[" + outpath + "mask_epithelium.tif] color_mode=Default rois_import=[ROI manager] view=Hyperstack stack_order=XYCZT");
+								//run("Bio-Formats Importer", "open=[" + outpath + "mask_epithelium.tif] color_mode=Default rois_import=[ROI manager] view=Hyperstack stack_order=XYCZT");
+								print("3");
+								open(outpath + "mask_epithelium.tif");
 								rename("mask_epithelium");
-								if(combine_neur) run("Bio-Formats Importer", "open=[" + outpath + "marker_of_interest.tif] color_mode=Default rois_import=[ROI manager] view=Hyperstack stack_order=XYCZT");
-								else run("Bio-Formats Importer", "open=[" + outpath + "marker_of_interest_" + channel + ".tif] color_mode=Default rois_import=[ROI manager] view=Hyperstack stack_order=XYCZT");
+								if(combine_neur) open(outpath + "marker_of_interest.tif");//run("Bio-Formats Importer", "open=[" + outpath + "marker_of_interest.tif] color_mode=Default rois_import=[ROI manager] view=Hyperstack stack_order=XYCZT");
+								else open(outpath + "marker_of_interest_" + channel + ".tif");//run("Bio-Formats Importer", "open=[" + outpath + "marker_of_interest_" + channel + ".tif] color_mode=Default rois_import=[ROI manager] view=Hyperstack stack_order=XYCZT");
 								rename("mask_channel");
-								run("Bio-Formats Importer", "open=[" + outpath + "mask_nuclei.tif] color_mode=Default rois_import=[ROI manager] view=Hyperstack stack_order=XYCZT");
+								//run("Bio-Formats Importer", "open=[" + outpath + "mask_nuclei.tif] color_mode=Default rois_import=[ROI manager] view=Hyperstack stack_order=XYCZT");
+								open(outpath + "mask_nuclei.tif");
 								rename("mask_nuclei");
+								print("4");
 				
 								run("Duplicate...", "temp_ROIs");
 								rename("temp_ROIs");
@@ -400,11 +409,13 @@ for(cont=0; cont<dir.length; cont++) { // for each SNI
 						if(combine_neur) {
 							tot_area_neuriteness = getNeuritenessArea("", outpath);
 							intact_net_measures = getIntactNet_ConnectedComponent(path, sni, "", outpath, overlayPath, image); // get intact net via connected components
+							getIntactNet("", outpath, overlayPath, image);
 							flooded_area = getFloodedArea("", outpath, overlayPath, maxProjPath, sni, image); // get area flooded by watershed
 						}
 						else {
 							tot_area_neuriteness = getNeuritenessArea(channel, outpath);
 							intact_net_measures = getIntactNet_ConnectedComponent(path, sni, channel, outpath, overlayPath, image);
+							getIntactNet(channel, outpath, overlayPath, image);
 							flooded_area = getFloodedArea(channel, outpath, overlayPath, maxProjPath, sni, image);
 						}
 						
@@ -423,9 +434,14 @@ for(cont=0; cont<dir.length; cont++) { // for each SNI
 							bufferMeasuresCy5 = bufferMeasuresCy5 + bufferMeasures;
 						else if(matches(image, ".*m cherry.*"))
 							bufferMeasuresMcherry = bufferMeasuresMcherry + bufferMeasures;
+						
+						run("Collect Garbage");
 					} else run("Close All");
+					run("Collect Garbage");
 				}
+				run("Collect Garbage");
 			}
+			run("Collect Garbage");
 		} else {
 			if(!fitcChannel) print("File: " + path + sni + "/newTiffImages/" + sni + "_FITC_Extended.tif does not exist");
 			if(!ABlines) print("File: " + maxProjPath + sni + "_AB.zip does not exist");
@@ -460,7 +476,8 @@ for(countChannels=0; countChannels<neur_channels.length; countChannels++) {
 function getEpithelium(sni, out_path) {
 
 	// read original FITC channel and retrieve the binary mask of the tissue, excluding the black background
-	run("Bio-Formats Importer", "open=[" + path + sni + "/newTiffImages/" + sni + "_FITC_Extended.tif] color_mode=Default rois_import=[ROI manager] view=Hyperstack stack_order=XYCZT");
+	//run("Bio-Formats Importer", "open=[" + path + sni + "/newTiffImages/" + sni + "_FITC_Extended.tif] color_mode=Default rois_import=[ROI manager] view=Hyperstack stack_order=XYCZT");
+	open(path + sni + "/newTiffImages/" + sni + "_FITC_Extended.tif");
 	rename("mask_tissue");
 
 	// rough threshold to separate the background
@@ -563,7 +580,8 @@ function getEpitheliumMFI(sni, img, out_path) {
 		open(out_path + "mask_epithelium.tif");
 		run("Create Selection");
 		
-		run("Bio-Formats Importer", "open=[" + path + sni + "/newTiffImages/" + replace(image, "Ne_", "") + "] color_mode=Default view=Hyperstack stack_order=XYCZT");
+		//run("Bio-Formats Importer", "open=[" + path + sni + "/newTiffImages/" + replace(image, "Ne_", "") + "] color_mode=Default view=Hyperstack stack_order=XYCZT");
+		open(path + sni + "/newTiffImages/" + replace(image, "Ne_", ""));
 		rename("original");
 		
 		run("Restore Selection");
@@ -581,7 +599,7 @@ function getEpitheliumMFI(sni, img, out_path) {
 }
 
 function getEpitheliumHeight(sni, out_path) {
-	measures = ""; //";;;;"; // initialize buffer of measures. If it cannot be calculated, then return string csv format
+	measures = "";
 	
 	// check if corresponding file exists in max projection folder
 	if(File.exists(maxProjPath + sni + "_AB.zip")) {
@@ -763,6 +781,7 @@ function getIntactNet(channel, out_path, overlay_path, img) {
 	setThreshold(2, 65535);
 	run("Convert to Mask");
 	saveAs("Tif", out_path + "watershed_" + channel + ".tif");
+	saveAs("Tif", overlay_path + "watershed_" + channel + "_" + img);
 	rename("watershed");
 
 	run("Morphological Filters", "operation=Dilation element=Square radius=6");
@@ -784,7 +803,7 @@ function getIntactNet(channel, out_path, overlay_path, img) {
 	run("Restore Selection");
 	run("Properties... ", "  width=3");
 	run("Flatten");
-	saveAs("Tif", out_path + "intact_net_watershed_" + channel + ".tif");
+	//saveAs("Tif", out_path + "intact_net_watershed_" + channel + ".tif");
 	saveAs("Tif", overlay_path + "intact_net_watershed_" + channel + "_" + img);
 
 	run("Close All");
@@ -795,7 +814,8 @@ function getIntactNet_ConnectedComponent(path, sni, channel, out_path, overlay_p
 	
 	// open original channel image
 	img_file = replace(image, "Ne_", "");
-	run("Bio-Formats Importer", "open=[" + path + sni + "/newTiffImages/" + img_file + "] color_mode=Default view=Hyperstack stack_order=XYCZT");
+	//run("Bio-Formats Importer", "open=[" + path + sni + "/newTiffImages/" + img_file + "] color_mode=Default view=Hyperstack stack_order=XYCZT");
+	open(path + sni + "/newTiffImages/" + img_file);
 	rename("original");
 	if(!useScale) run("Set Scale...", "distance=1 known=1 unit=micron");
 	
@@ -913,7 +933,8 @@ function getCombinedNeuriteness(sni, out_path) {
 		if(channelOfInterest(image) && startsWith(image, "Ne_")) { // if channel of interest
 			
 			// crop polygon mask on the neuriteness image, apply threshold and get threshold value
-			run("Bio-Formats Importer", "open=[" + path + sni + "/" + image + "] color_mode=Default view=Hyperstack stack_order=XYCZT");
+			//run("Bio-Formats Importer", "open=[" + path + sni + "/" + image + "] color_mode=Default view=Hyperstack stack_order=XYCZT");
+			open(path + sni + "/" + image);
 			run("Median...", "radius=4");
 			rename("neuriteness_"+n);
 			run("Restore Selection");
@@ -1057,6 +1078,7 @@ function segmentNuclei(sni, out_path) {
 	for(i=0; i<sniList.length; i++) {
 		if(matches(sniList[i], ".*DAPI.*")) {
 			run("Bio-Formats Importer", "open=[" + path + sni + "/" + sniList[i] + "] color_mode=Default rois_import=[ROI manager] view=Hyperstack stack_order=XYCZT");
+			//open(path + sni + "/" + sniList[i]);
 			rename("nuclei");
 
 			selectWindow("nuclei");
