@@ -22,7 +22,12 @@ The software listed below should be installed before running the scripts availab
 4. Set the parameters accordingly
 5. Execute the macro by pressing the *Run* button
 
-### Data structure 
+### Input data
+
+The input data used to run the ImageJ macro scripts are structured in two main folders:
+
+- *SNIs*: Contains subfolders with fluorescent channel images and corresponding net-like structure files
+- *SNIs_Max*: Contains the maximum intensity projection and the annotations of the apical and basal epithelial boundaries
 
 ### Parameter set of the ImageJ macro script
 
@@ -34,11 +39,13 @@ The Matlab script *batch_neuriteness.m* generates the enhanced net-like structur
 
 To run *batch_neuriteness.m*, load the script in Matlab and then update the corresponding local path in the *addpath* command, which should be linked to the [*vesselness2d* library](https://github.com/BoguslawObara/vesselness2d). The corresponding neuriteness images of each fluorescent channel are saved in the subfolders of the input directory. 
 
-### Authors
+### Output data
+
+## Authors
 
 [SciLifeLab BioImage Informatics Facility (BIIF)](https://biifsweden.github.io/) project lead: Gisele Miranda
 
-### Licence
+## Licence
 
 [MIT](LICENSE)
 
