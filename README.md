@@ -3,7 +3,7 @@
 ### Overview
 Epithelial cells express a variety of epithelial junction proteins which are crucial for maintaining the organization and structural integrity of the epithelium. Additionally, these proteins also provide an important physical barrier preventing entry of incoming pathogens which have been demonstrated for a variety of viruses including HIV and HPV. A disrupted or dysregulated epithelial compartment might therefore increase the risk of acquiring sexually transmitted infections. It is therefore important to better understand how different factors such as infections, treatments or other interventions might influence the epithelial barrier to better understand the potential susceptibility to infections. This workflow was therefore developed to investigate the structural integrity of the stratified squamous epithelium of the ectocervix. Although it has yet only been tested on the epithelium of the ectocervix and vagina we believe that it would likely work on other epithelial compartments with a similar morphology, such as the skin.
 
-<a href="url"><img src="img/overview.png" height="auto" width="500" ></a>
+<a href="url"><img src="img/overview.png" height="600" width="700" ></a>
 
 ### Software Requirements
 
