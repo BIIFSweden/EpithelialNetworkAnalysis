@@ -26,14 +26,14 @@ The software listed below should be installed before running the scripts availab
 
 The input data used to run the ImageJ macro scripts are structured in two main folders:
 
-- *SNIs*: Contains subfolders with fluorescent channel images and corresponding net-like structure files
-- *SNIs_Max*: Contains the maximum intensity projection and the annotations of the apical and basal epithelial boundaries
+- **SNIs**: Contains subfolders with fluorescent channel images and corresponding net-like structure files
+- **SNIs_Max**: Contains the maximum intensity projection and the annotations of the apical and basal epithelial boundaries
 
-### Parameter set of the ImageJ macro script
+### Input parameters
 
+Besides the path to the location of the input data, a set of parameters can be updated before running the script *netShapeAnalysis.ijm*: threshold method (Otsu default), correction factor for threshold value, distance threshold (EDT), minimum area of the intermediate layer, maximum size of nuclei, etc. For a detailed description of these parameter, please refer to the supplementary information of the related manuscript and the parameters described in the script file.
 
-
-### Generating the net-like shape of the junction proteins
+### Generating the net-like shape
 
 The Matlab script *batch_neuriteness.m* generates the enhanced net-like structure for each fluorescent channel of each SNI using the method proposed by: Obara, Boguslaw, et al. "Contrast-independent curvilinear structure detection in biomedical images." *IEEE Transactions on Image Processing* 21.5 (2012): 2572-2581.
 
@@ -41,9 +41,11 @@ To run *batch_neuriteness.m*, load the script in Matlab and then update the corr
 
 ### Output data
 
-## Authors
+## Contact
 
-[SciLifeLab BioImage Informatics Facility (BIIF)](https://biifsweden.github.io/) project lead: Gisele Miranda
+[SciLifeLab BioImage Informatics Facility (BIIF)](https://www.scilifelab.se/units/bioimage-informatics/) 
+
+Developed by Gisele Miranda
 
 ## Licence
 
