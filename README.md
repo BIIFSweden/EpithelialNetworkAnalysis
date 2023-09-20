@@ -31,7 +31,7 @@ The input data used to run the ImageJ macro scripts are structured in two main f
 
 ### Input parameters
 
-Besides the path to the location of the input data, a set of parameters can be updated before running the script *netShapeAnalysis.ijm*: threshold method (Otsu default), correction factor for threshold value, distance threshold (EDT), minimum area of the intermediate layer, maximum size of nuclei, etc. For a detailed description of these parameter, please refer to the supplementary information of the related manuscript and the parameters described in the script file.
+Besides the path to the location of the input data, a set of parameters can be updated before running the script *netShapeAnalysis.ijm*: threshold method (Otsu default), correction factor for threshold value, distance threshold (EDT), minimum area of the intermediate layer, maximum size of nuclei, etc. For a detailed description of these parameters, please refer to the supplementary information of the related manuscript and the description available in the script file.
 
 ### Generating the net-like shape
 
@@ -41,11 +41,13 @@ To run *batch_neuriteness.m*, load the script in Matlab and then update the corr
 
 ### Output data
 
+An output folder is created inside each SNI folder containing the corresponding processed images. In the main input path, a *csv* file with the measurements of each SNI is created. In addition, an *overlay* folder with a summary of the segmentation and watershed results for the intermediate layer is also created in the same directory.
+
 ## Contact
 
 [SciLifeLab BioImage Informatics Facility (BIIF)](https://www.scilifelab.se/units/bioimage-informatics/) 
 
-Developed by Gisele Miranda
+*Developed by* Gisele Miranda
 
 ## Licence
 
