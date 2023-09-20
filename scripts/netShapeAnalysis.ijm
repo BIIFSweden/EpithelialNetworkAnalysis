@@ -12,9 +12,10 @@
 /********************** parameters ***********************/
 
 // path to the input directory containing the SNIs
-path = ""; // Ex.: /Users/username/data/SNIs/ 
+#@ File (label = "SNI directory", style = "directory") path
 // path to the input directory containing the maximum intensity projection that were used to draw AB lines
-maxProjPath = ""; // Ex.: /Users/username/data/SNIs_Max/
+#@ File (label = "MAX directory", style = "directory") maxProjPath
+
 // channel to be analyzed - names should be used according to the nomenclature of the files: cy3, FITC, Cy5 and m cherry
 channel_of_interest = "FITC";
 // threshold method - to be applied to the enhanced net-image
@@ -44,6 +45,8 @@ exp_name = "ExperimentID";
 /*********************************************************/
 
 // read input directory and create output folders
+path = path + "/";
+maxProjPath = maxProjPath + "/";
 dir = getFileList(path);
 bufferMeasures = "";
 exp_id = threshold_method + "_correc-factor-" + correc_factor + "_dist-" + distance_threshold + "_area-" + area_threshold + "_radDilation-" + radiusDilation + "_" + exp_name;

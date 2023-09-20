@@ -193,11 +193,9 @@ for(countSNI=0; countSNI<dir.length; countSNI++) { // for each SNI
 				flooded_area = 0;
 				
 				intact_net_measures = getIntactNet_ConnectedComponent("", sni, outpath, overlayPath);
-				//this functions also returns the area, however we're not using it here now
 				getIntactNet(sni, outpath, overlayPath);
-				// getFloodedArea depends on the results generated on function getIntactNet_ConnectedComponent
 				flooded_area = getFloodedArea(outpath, exp_output_cy3, overlayPath, maxProjPath + File.separator + sni + "_AB.zip", sni);
-				if (flooded_area == -1) flooded_area = tot_area_epithelium; // then flooded_area will be equal the area of the epithelium
+				if (flooded_area == -1) flooded_area = tot_area_epithelium;
 				
 				intact_net_measures = split(intact_net_measures," ");
 				area_intact_net_cc_holes = parseFloat(intact_net_measures[0]);
@@ -250,7 +248,7 @@ function getParametersPerChannel(ch) {
 function getCombinedMasks(files, out_path, mask_name) {
 	comb = 0;
 	
-	if(matches(files[0], "") && matches(files[1], "") && matches(files[2], "")) { // no neuriteness found
+	if(matches(files[0], "") && matches(files[1], "") && matches(files[2], "")) { // no net-shape found
 		comb = 0;
 		print("all empty");
 	}
@@ -468,7 +466,7 @@ function getIntactNet_ConnectedComponent(channel, sni, out_path, overlay_path) {
 		run("Select None");
 	
 		selectWindow("Mask of markerImg");
-		//if(useScale) run("Set Scale...", "distance=" + pixPerMic + " known=1 unit=micron");
+		if(useScale) run("Set Scale...", "distance=" + pixPerMic + " known=1 unit=micron");
 		run("Measure");
 		area_with_holes = getResult("Area", 0);
 		selectWindow("Results"); 
