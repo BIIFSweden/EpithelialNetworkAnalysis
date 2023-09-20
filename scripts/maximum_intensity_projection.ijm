@@ -1,7 +1,8 @@
 /************** parameters **************/
-useNucleiChannel = false; // or true
+useNucleiChannel = false;
 /****************************************/
 
+// source: https://github.com/miura/IJ_BCautoMacro/tree/master
 function autoAdjust() {
 	auto_thres = 5000;
 	getRawStatistics(pixcount);
@@ -27,7 +28,6 @@ function autoAdjust() {
 	hmax = values[i];
 	
 	setMinAndMax(hmin, hmax);
-	//print(hmin, hmax);
 	run("Apply LUT");
 }
 

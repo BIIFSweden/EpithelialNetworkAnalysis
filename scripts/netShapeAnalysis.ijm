@@ -12,43 +12,45 @@
 /********************** parameters ***********************/
 
 // path to the input directory containing the SNIs
-path = "/Users/giselemiranda/Downloads/Gisele Cy5 (ZO1)/HIV/";
+path = ""; // Ex.: /Users/username/data/SNIs/ 
 // path to the input directory containing the maximum intensity projection that were used to draw AB lines
-maxProjPath = "/Users/giselemiranda/Downloads/Gisele Cy5 (ZO1)/HIV_Max/";
+maxProjPath = ""; // Ex.: /Users/username/data/SNIs_Max/
 // channel to be analyzed - names should be used according to the nomenclature of the files: cy3, FITC, Cy5 and m cherry
-channel_of_interest = "Cy5";
-// method chosen to threshold the NEURITENESS image
+channel_of_interest = "FITC";
+// threshold method - to be applied to the enhanced net-image
 threshold_method = "Otsu";
-// correction factor applied to the segmented NEURITENESS
-correc_factor = 0.8; //1.5;
-// distance threshold used to segment the REGION OF INTEREST, defined based on the EDT applied over NEURITENESS IMAGE
-distance_threshold = 7; //10;
-// area threshold to filter the segmented regions
+// correction factor applied to the resulting segmentation of the enhanced net-image
+correc_factor = 1.5;
+// distance threshold of the EDT transform applied to the segmented-net - used to retrieve the intermediate layer for each marker
+distance_threshold = 10;
+// area threshold - used to filter out unwanted small regions
 area_threshold = 70000;
-// area threshold to filter the connected components of the intact net
+// area threshold - used to filter out connected components of the intermediate layer by size
 area_connected_threshold = 5000;
 // size of the structuring element for Dilation
 radiusDilation = 5;
-// minimum nuclei size used to post process the nuclei segmentation
+// minimum size of segmented nuclei - used to post process the result of the nuclei segmentation
 nucleiSize = 1000;
 // scale used to calibrate the images (pixels per micron)
 pixPerMic = 3.07693;
 // if scale should be used, otherwise results will be given in pixels
 useScale = true;
-// used to set up minimum and maximum threshold values to segment the neuriteness image
-minThr = 0; //0;
+// used to set minimum and maximum threshold values to segment the net-image
+minThr = 0; 
 maxThr = 1;
-// name of the experiment that will be used to name the output folder
-exp_name = "Cy5_pipeline5";
+// experiment ID - will be used to name the output folder containing processed images and measures
+exp_name = "ExperimentID";
 
 /*********************************************************/
 
+// read input directory and create output folders
 dir = getFileList(path);
 bufferMeasures = "";
 exp_id = threshold_method + "_correc-factor-" + correc_factor + "_dist-" + distance_threshold + "_area-" + area_threshold + "_radDilation-" + radiusDilation + "_" + exp_name;
 overlayPath = path + "overlay_" + exp_id + "/";
 if(!File.exists(overlayPath)) File.makeDirectory(overlayPath);
 
+// start processing
 for(countSNI=0; countSNI<dir.length; countSNI++) { // for each SNI
 	print("countSNI: " + countSNI);
 	sni = dir[countSNI];
@@ -180,7 +182,7 @@ for(countSNI=0; countSNI<dir.length; countSNI++) { // for each SNI
 					close("Result of Mask");
 				}
 				
-				// delete indexToDelete, the remaining selections that are larger the threshold
+				// delete indexToDelete, the remaining selections are larger than the area_threshold
 				countSelectedROIs = 0;
 				for(i=0; i<nRois; i++) {
 					if(indexToDelete[i] == 0) {
@@ -201,22 +203,11 @@ for(countSNI=0; countSNI<dir.length; countSNI++) { // for each SNI
 				// if there are segmented regions, then calculate derived measures
 				if(countSelectedROIs != 0) { 
 					
-					// obs: include this code if holes in the thresholded neuriteness mask should not be included in the final segmented region
-					// create selection over the final mask and crop the corresponding boundary on the original neuriteness
-					/*selectWindow("Mask");
-					//run("Create Selection");
-					//selectWindow("segmented_region_final");
-					//run("Restore Selection");
-					//run("Clear Outside");
-					//run("Select None");
-					//selectWindow("segmented_region_final");*/
-					
 					selectWindow("Mask");
 
 					// total segmented area
 					if(useScale) run("Set Scale...", "distance=" + pixPerMic + " known=1 unit=micron");
 					run("Analyze Particles...", "clear summarize");
-					//run("Analyze Particles...", "clear include summarize");
 					Table.rename("Summary", "Results");
 					tot_area_segmented = getResult("Total Area", 0);
 					selectWindow("Results"); 
@@ -262,7 +253,7 @@ for(countSNI=0; countSNI<dir.length; countSNI++) { // for each SNI
 					saveAs("Tif", outpath + "segmented_region_overlay_original_" + channel_of_interest + ".tif");
 					saveAs("Tif", overlayPath + "segmented_region_overlay_original_" + channel_of_interest + "_" + sni);
 					
-					// save segmented region over neuriteness image
+					// save segmented intermediate layer over net-image
 					open(neur_path);
 					rename("neuriteness");
 					run("Restore Selection");
@@ -294,7 +285,7 @@ for(countSNI=0; countSNI<dir.length; countSNI++) { // for each SNI
 					run("Close");
 					close("temp_ROIs");
 
-					// get area of parabasal layer by adding the mask_channel to the mask_nuclei
+					// get area of parabasal layer by adding the mask_channel to the mask_nuclei
 					imageCalculator("Add create", "mask_channel","mask_nuclei");
 					selectWindow("Result of mask_channel");
 					rename("parabasal_marker");
@@ -355,7 +346,7 @@ for(countSNI=0; countSNI<dir.length; countSNI++) { // for each SNI
 					selectWindow("lower");
 					saveAs("Tif", outpath + "lower_layer_" + channel_of_interest + ".tif");
 
-					// add to buffer
+					// add measures to the buffer 
 					bufferChannel = bufferChannel + tot_area_segmented + ";" + orig_mean + ";" + orig_std + ";" + tot_area_segmented_neuriteness + ";" + (tot_area_segmented/tot_area_epithelium) + ";" + (tot_area_segmented_neuriteness/tot_area_epithelium) + ";" + (tot_area_segmented_neuriteness/tot_area_segmented) + ";" + tot_area_parabasal + ";" + tot_area_upper + ";" + tot_area_lower + ";";
 					
 					// distance transform of segmented channel marker to apical layer
@@ -379,9 +370,7 @@ for(countSNI=0; countSNI<dir.length; countSNI++) { // for each SNI
 					
 					tot_area_neuriteness = getNeuritenessArea(channel_of_interest, outpath);
 					intact_net_measures = getIntactNet_ConnectedComponent(img_path, neur_path, channel_of_interest, sni, outpath, overlayPath);
-					//this functions also returns the area, however we're not using here now
 					getIntactNet(channel_of_interest, sni, outpath, overlayPath);
-					// getFloodedArea depends on the results generated on function getIntactNet_ConnectedComponent
 					flooded_area = getFloodedArea(channel_of_interest, outpath, overlayPath, img_path_max_AB, sni);
 					if (flooded_area == -1) flooded_area = tot_area_epithelium; // then flooded_area will be equal the area of the epithelium
 					
@@ -396,12 +385,12 @@ for(countSNI=0; countSNI<dir.length; countSNI++) { // for each SNI
 				} else {
 					print("No regions were selected for this SNI");
 					run("Close All");
-					bufferMeasures = bufferMeasures + "\n"; // complete csv buffer with empty symbols
+					bufferMeasures = bufferMeasures + "\n";
 				}
 			} else {
 				print("No regions with area bigger than the area threshold were found");
 				run("Close All");
-				bufferMeasures = bufferMeasures + "\n"; // complete csv buffer with empty symbols
+				bufferMeasures = bufferMeasures + "\n";
 			}
 		} else {
 			run("Close All");
@@ -425,7 +414,7 @@ print(summaryFile, "sni;channel;number of pixels in the basal layer;average heig
 print(summaryFile, bufferMeasures);
 File.close(summaryFile);
 
-/****************** functions ****************************/
+/****************** functions ******************/
 
 function getEpithelium(sni, input_path, out_path) {
 
@@ -441,7 +430,7 @@ function getEpithelium(sni, input_path, out_path) {
 	run("Convert to Mask");
 	run("Fill Holes");
 	run("Create Selection");
-	run("Enlarge...", "enlarge=-3"); // cut some pixels of the border to remove the bright square around the SNI 
+	run("Enlarge...", "enlarge=-3");
 	run("Clear Outside");
 	run("Select None");
 	
@@ -699,7 +688,7 @@ function getNeuriteness(channel, input_path, out_path) {
 	rename("mask_neuriteness");
 	run("Multi OtsuThreshold", "numlevels=3");
 	
-	/*selectWindow("Region 1");
+	selectWindow("Region 1");
 	setAutoThreshold("Otsu dark");
 	setOption("BlackBackground", true);
 	run("Convert to Mask");
@@ -709,17 +698,12 @@ function getNeuriteness(channel, input_path, out_path) {
 	setOption("BlackBackground", true);
 	run("Convert to Mask");
 	
-	imageCalculator("Add create", "Region 1","Region 2");*/
+	imageCalculator("Add create", "Region 1","Region 2");
 
 	logString = getInfo("log");
 	buffer = split(logString, "\n");
 	buffer = split(buffer[buffer.length-1], " ");
-	
-	lower = "";
-	if(matches(channel, "cy3") || matches(channel, "FITC"))
-		lower = split(buffer[2], "=");
-	else
-		lower = split(buffer[3], "=");
+	lower = split(buffer[2], "=");
 	lower = lower[1];
 	lower = replace(lower, ",", "");
 	lower = parseInt(lower);
@@ -758,7 +742,6 @@ function getNeuritenessArea(channel, out_path) {
 
 function getIntactNet_ConnectedComponent(img_path, neur_path, channel, sni, out_path, overlay_path) {
 	// open original channel image
-	//run("Bio-Formats Importer", "open=[" + path + sni + "/newTiffImages/" + img_file + "] color_mode=Default view=Hyperstack stack_order=XYCZT");
 	open(img_path);
 	rename("original");
 	if(!useScale) run("Set Scale...", "distance=1 known=1 unit=micron");
@@ -821,8 +804,6 @@ function getIntactNet_ConnectedComponent(img_path, neur_path, channel, sni, out_
 	} else m = "0 0 0 0";
 	
 	run("Close All");
-	
-	print(m);
 	return m;
 }
 
