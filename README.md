@@ -55,4 +55,7 @@ An output folder is created inside each SNI folder containing the corresponding 
 
 [MIT](LICENSE)
 
+## DOI
+[![DOI](https://zenodo.org/badge/374763979.svg)](https://zenodo.org/badge/latestdoi/374763979)
+
 
