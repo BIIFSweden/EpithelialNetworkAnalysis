@@ -5,6 +5,8 @@ Epithelial cells express a variety of epithelial junction proteins which are cru
 
 <a href="url"><img src="img/overview.png" height="650" width="800" ></a>
 
+[![DOI](https://zenodo.org/badge/374763979.svg)](https://zenodo.org/badge/latestdoi/374763979)
+
 ## Software Requirements
 
 The software listed below should be installed before running the scripts available in this repository.
