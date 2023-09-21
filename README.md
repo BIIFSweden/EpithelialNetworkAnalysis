@@ -33,6 +33,8 @@ The input data used to run the ImageJ macro scripts are structured in two main f
 
 Besides the path to the location of the input data, a set of parameters can be updated before running the script *netShapeAnalysis.ijm*: threshold method (Otsu default), correction factor for threshold value, distance threshold (EDT), minimum area of the intermediate layer, maximum size of nuclei, etc. For a detailed description of these parameters, please refer to the supplementary information of the related manuscript and the description available in the script file.
 
+The script *netShapeAnalysis_combinedNet.ijm* runs the combined epithelial junction protein analysis and should be used after the net-shape of the intermediate layer is generated for each channel.
+
 ### Generating the net-like shape
 
 The Matlab script *batch_neuriteness.m* generates the enhanced net-like structure for each fluorescent channel of each SNI using the method proposed by: Obara, Boguslaw, et al. "Contrast-independent curvilinear structure detection in biomedical images." *IEEE Transactions on Image Processing* 21.5 (2012): 2572-2581.
